@@ -1,0 +1,4 @@
+#Thu Oct 03 15:22:03 CDT 2024
+base.0=/Users/megguo/Documents/GitHub/cs423/build/app/intermediates/dex/debug/mergeDexDebug/classes.dex
+path.0=classes.dex
+renamed.0=classes.dex
