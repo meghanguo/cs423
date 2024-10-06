@@ -147,7 +147,7 @@ class _MyHomePageState extends State<MyHomePage> {
                     FloatingActionButton(
                       onPressed: () {
                         print('Plus button clicked');
-                        _openNewDrawingScreen(); // Open new screen on button click
+                        _openNewDrawingScreen(); // Open new drawing screen on button click
                       },
                       child: const Icon(Icons.add),
                     ),
