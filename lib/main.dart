@@ -1,6 +1,7 @@
 import 'dart:math';
 
 import 'package:flutter/material.dart';
+import 'package:painting_app_423/drawing_page.dart';
 
 void main() {
   runApp(const MyApp());
@@ -101,7 +102,7 @@ class _MyHomePageState extends State<MyHomePage> {
   // Navigate to the new drawing screen
   void _openNewDrawingScreen() {
     Navigator.of(context).push(MaterialPageRoute(
-      builder: (context) => const NewScreen(),
+      builder: (context) => DrawingPage(),
     ));
   }
 
@@ -159,67 +160,8 @@ class _MyHomePageState extends State<MyHomePage> {
               painter: GesturePainter(points: _points),
               child: Container(),
             ),
-            // The box with the plus button
-            Positioned(
-              top: 20, // Adjust top position
-              left: 20, // Adjust left position
-              child: Container(
-                width: 200, // Adjust width as needed
-                height: 250, // Adjust height as needed
-                padding: const EdgeInsets.all(16.0),
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.circular(8.0),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black.withOpacity(0.1),
-                      spreadRadius: 2,
-                      blurRadius: 5,
-                      offset: const Offset(0, 3), // changes position of shadow
-                    ),
-                  ],
-                ),
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  crossAxisAlignment: CrossAxisAlignment.center,
-                  children: [
-                    const Text(
-                      'Click or draw a plus gesture to start a new drawing',
-                      style: TextStyle(fontSize: 16),
-                    ),
-                    const SizedBox(height: 10),
-                    FloatingActionButton(
-                      onPressed: () {
-                        print('Plus button clicked');
-                        _openNewDrawingScreen(); // Open new drawing screen on button click
-                      },
-                      child: const Icon(Icons.add),
-                    ),
-                  ],
-                ),
-              ),
-            ),
+            Text("Favorites"),
           ],
-        ),
-      ),
-    );
-  }
-}
-
-// New screen widget
-class NewScreen extends StatelessWidget {
-  const NewScreen({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('New Screen'),
-      ),
-      body: Center(
-        child: const Text(
-          'You opened a new screen!',
-          style: TextStyle(fontSize: 24),
         ),
       ),
     );
