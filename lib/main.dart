@@ -1,5 +1,4 @@
 import 'dart:math';
-
 import 'package:flutter/material.dart';
 import 'package:painting_app_423/drawing_page.dart';
 
@@ -39,64 +38,43 @@ class _MyHomePageState extends State<MyHomePage> {
   List<Offset> _points = [];
   bool _canDraw = true; // Control to allow redrawing
 
-  // Variables to track if a plus was drawn
-  bool _horizontal = false;
-  bool _vertical = false;
-
   // Method to check if any gesture is detected
   void _detectGesture(List<Offset> points) {
-    if (points.length < 2) return; // Too few points to be a plus sign
+    if (points.length < 4) return; // Need at least 4 points to form a plus
 
-    List<double> slopes = [];
+    // Find extreme points to determine center
+    double minX = points.map((p) => p.dx).reduce(min);
+    double maxX = points.map((p) => p.dx).reduce(max);
+    double minY = points.map((p) => p.dy).reduce(min);
+    double maxY = points.map((p) => p.dy).reduce(max);
 
-    for (int i = 1; i < points.length; i++) {
-      double dx = (points[i].dx - points[i - 1].dx).abs();
-      double dy = (points[i].dy - points[i - 1].dy).abs();
-      slopes.add(dy / dx);
-    }
+    // Calculate the center of the drawn gesture
+    double centerX = (minX + maxX) / 2;
+    double centerY = (minY + maxY) / 2;
 
-    double slopeSum = 0;
-    double count = 0;
-    double countInfinities = 0;
-    double countZeros = 0;
-    for (int i = 0; i < slopes.length; i++) {
-      if (slopes[i] != double.infinity){
-        slopeSum += slopes[i];
-        count += 1;
+    // Variables to track horizontal and vertical strokes
+    bool hasHorizontal = false;
+    bool hasVertical = false;
+
+    for (Offset point in points) {
+      // Check for horizontal strokes
+      if ((point.dy - centerY).abs() < 30 && point.dx >= minX && point.dx <= maxX) {
+        hasHorizontal = true;
       }
-      if (slopes[i] < 1) {
-        countZeros += 1;
-      } else if (slopes[i] == double.infinity) {
-        countInfinities += 1;
+      // Check for vertical strokes
+      if ((point.dx - centerX).abs() < 30 && point.dy >= minY && point.dy <= maxY) {
+        hasVertical = true;
       }
     }
 
-    print(countZeros);
-    print(countInfinities);
-    if (countZeros > 2 && countInfinities > 2 && max(countZeros, countInfinities) / min(countZeros, countInfinities) <= 3.0) {
-      _horizontal = false;
-      _vertical = false;
-      print("not linear");
-      return;
-    }
-
-    // detect plus sign
-    print(slopeSum/count);
-    if ((slopeSum / count >= 1 || count == 0) && _horizontal) {
-      _gestures[0] = true;
-      _horizontal = false;
-    } else if (slopeSum / count < 1 && _vertical) {
-      _gestures[0] = true;
-      _vertical = false;
-    } else if (slopeSum / count >= 1 || count == 0) {
-      _vertical = true;
+    // Determine if both horizontal and vertical strokes are present
+    if (hasHorizontal && hasVertical) {
+      _gestures[0] = true; // Indicate a plus sign was detected
     } else {
-      _horizontal = true;
+      _gestures[0] = false; // No plus sign detected
     }
 
-    print(_horizontal);
-    print(_vertical);
-    print(_gestures[0]);
+    print("Horizontal: $hasHorizontal, Vertical: $hasVertical, Gesture Detected: ${_gestures[0]}");
   }
 
   // Navigate to the new drawing screen
@@ -135,12 +113,8 @@ class _MyHomePageState extends State<MyHomePage> {
               _detectGesture(_points);
               if (_gestures[0]) {
                 print("Plus sign detected!");
-                _vertical = false;
-                _horizontal = false;
-                _gestures[0] = false;
                 _openNewDrawingScreen(); // Open new screen on plus detection
-              }
-              else {
+              } else {
                 print("No gesture detected");
               }
               _points.clear(); // Clear points after recognition
@@ -160,7 +134,6 @@ class _MyHomePageState extends State<MyHomePage> {
               painter: GesturePainter(points: _points),
               child: Container(),
             ),
-            Text("Favorites"),
           ],
         ),
       ),
