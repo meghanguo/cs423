@@ -1,0 +1,25 @@
+-- Merging decision tree log ---
+manifest
+ADDED from /Users/megguo/.pub-cache/hosted/pub.dev/file_saver-0.2.12/android/src/main/AndroidManifest.xml:1:1-4:12
+INJECTED from /Users/megguo/.pub-cache/hosted/pub.dev/file_saver-0.2.12/android/src/main/AndroidManifest.xml:1:1-4:12
+INJECTED from /Users/megguo/.pub-cache/hosted/pub.dev/file_saver-0.2.12/android/src/main/AndroidManifest.xml:1:1-4:12
+	package
+		ADDED from /Users/megguo/.pub-cache/hosted/pub.dev/file_saver-0.2.12/android/src/main/AndroidManifest.xml:1:11-51
+		INJECTED from /Users/megguo/.pub-cache/hosted/pub.dev/file_saver-0.2.12/android/src/main/AndroidManifest.xml
+		INJECTED from /Users/megguo/.pub-cache/hosted/pub.dev/file_saver-0.2.12/android/src/main/AndroidManifest.xml
+	xmlns:android
+		ADDED from /Users/megguo/.pub-cache/hosted/pub.dev/file_saver-0.2.12/android/src/main/AndroidManifest.xml:1:1-4:12
+uses-sdk
+INJECTED from /Users/megguo/.pub-cache/hosted/pub.dev/file_saver-0.2.12/android/src/main/AndroidManifest.xml reason: use-sdk injection requested
+INJECTED from /Users/megguo/.pub-cache/hosted/pub.dev/file_saver-0.2.12/android/src/main/AndroidManifest.xml
+INJECTED from /Users/megguo/.pub-cache/hosted/pub.dev/file_saver-0.2.12/android/src/main/AndroidManifest.xml
+INJECTED from /Users/megguo/.pub-cache/hosted/pub.dev/file_saver-0.2.12/android/src/main/AndroidManifest.xml
+INJECTED from /Users/megguo/.pub-cache/hosted/pub.dev/file_saver-0.2.12/android/src/main/AndroidManifest.xml
+	android:targetSdkVersion
+		INJECTED from /Users/megguo/.pub-cache/hosted/pub.dev/file_saver-0.2.12/android/src/main/AndroidManifest.xml
+		ADDED from /Users/megguo/.pub-cache/hosted/pub.dev/file_saver-0.2.12/android/src/main/AndroidManifest.xml
+		INJECTED from /Users/megguo/.pub-cache/hosted/pub.dev/file_saver-0.2.12/android/src/main/AndroidManifest.xml
+	android:minSdkVersion
+		INJECTED from /Users/megguo/.pub-cache/hosted/pub.dev/file_saver-0.2.12/android/src/main/AndroidManifest.xml
+		ADDED from /Users/megguo/.pub-cache/hosted/pub.dev/file_saver-0.2.12/android/src/main/AndroidManifest.xml
+		INJECTED from /Users/megguo/.pub-cache/hosted/pub.dev/file_saver-0.2.12/android/src/main/AndroidManifest.xml
