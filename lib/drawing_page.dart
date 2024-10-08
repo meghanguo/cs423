@@ -28,89 +28,84 @@ class _DrawingPageState extends State<DrawingPage> with SingleTickerProviderStat
   final CurrentStrokeValueNotifier currentStroke = CurrentStrokeValueNotifier();
   final ValueNotifier<List<Stroke>> allStrokes = ValueNotifier([]);
 
+  bool _isLocked = false;
+  bool _canDraw = false;
+
   @override
   void initState() {
     super.initState();
     animationController = AnimationController(vsync: this, duration: const Duration(milliseconds: 300));
   }
 
+  void _drawingMode() {
+    setState(() {
+      _isLocked = !_isLocked;
+      _canDraw = !_isLocked;
+
+      // Show message based on the current mode
+      final snackBar = SnackBar(
+        content: Text(_isLocked ? 'No Drawing Mode On' : 'Drawing Mode On'),
+        duration: Duration(seconds: 2),
+      );
+      ScaffoldMessenger.of(context).showSnackBar(snackBar);
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
-    return Scaffold (
-        appBar: AppBar(
-          backgroundColor: Theme.of(context).colorScheme.inversePrimary,
-        ),
+    return Scaffold(
+      appBar: AppBar(
+        backgroundColor: Theme.of(context).colorScheme.inversePrimary,
+      ),
       drawer: Drawer(
-        child: CanvasSideBar(
-            drawingTool: drawingTool,
-            selectedColor: selectedColor,
-            strokeSize: strokeSize,
-            eraserSize: eraserSize,
-            currentSketch: currentStroke,
-            allSketches: allStrokes,
-            canvasGlobalKey: canvasGlobalKey,
-          ),
-        ),
+        child: _canDraw ? CanvasSideBar(
+          drawingTool: drawingTool,
+          selectedColor: selectedColor,
+          strokeSize: strokeSize,
+          eraserSize: eraserSize,
+          currentSketch: currentStroke,
+          allSketches: allStrokes,
+          canvasGlobalKey: canvasGlobalKey,
+        ) : null, // Disable drawer interaction when locked
+      ),
       backgroundColor: Color(0xfff2f3f7),
       body: Stack(
         children: [
-          AnimatedBuilder(animation: Listenable.merge([
-            currentStroke,
-            allStrokes,
-            selectedColor,
-            strokeSize,
-            eraserSize,
-            drawingTool,
-            backgroundImage,
-          ]), builder: (context, _) {
-            return DrawingCanvas(
-              options: DrawingCanvasOptions (
-                currentTool: drawingTool.value,
-                size: strokeSize.value,
-                strokeColor: selectedColor.value,
-                backgroundColor: Color(0xfff2f3f7)
-              ),
-              canvasKey: canvasGlobalKey,
-              currentStrokeListenable: currentStroke,
-              strokesListenable: allStrokes,
-              backgroundImageListenable: backgroundImage,
-            );
-          }),
-        ],
-      )
-    );
-  }
-}
-
-class _CustomAppBar extends StatelessWidget {
-  final AnimationController animationController;
-
-  const _CustomAppBar({Key? key, required this.animationController})
-      : super(key: key);
-
-  @override
-  Widget build(BuildContext context) {
-    return SizedBox(
-      height: kToolbarHeight,
-      width: double.maxFinite,
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 10),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            IconButton(
-              onPressed: () {
-                if (animationController.value == 0) {
-                  animationController.forward();
-                } else {
-                  animationController.reverse();
-                }
+          AnimatedBuilder(
+              animation: Listenable.merge([
+                currentStroke,
+                allStrokes,
+                selectedColor,
+                strokeSize,
+                eraserSize,
+                drawingTool,
+                backgroundImage,
+              ]),
+              builder: (context, _) {
+                return DrawingCanvas(
+                  options: DrawingCanvasOptions(
+                    currentTool: drawingTool.value,
+                    size: strokeSize.value,
+                    strokeColor: selectedColor.value,
+                    backgroundColor: Color(0xfff2f3f7),
+                  ),
+                  canvasKey: canvasGlobalKey,
+                  currentStrokeListenable: currentStroke,
+                  strokesListenable: allStrokes,
+                  backgroundImageListenable: backgroundImage,
+                  canDraw: _canDraw, // Pass canDraw flag here
+                );
               },
-              icon: const Icon(Icons.menu),
+          ),
+          Positioned(
+            bottom: 20,
+            right: 20,
+            child: FloatingActionButton(
+              onPressed: _drawingMode,
+              child: Icon(_isLocked ? Icons.lock : Icons.lock_open),
             ),
-            const SizedBox.shrink(),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }

@@ -17,6 +17,7 @@ class DrawingCanvas extends StatefulWidget{
   final Function(Stroke?)? onDrawingStrokeChanged;
   final GlobalKey canvasKey;
   final ValueNotifier<ui.Image?>? backgroundImageListenable;
+  final bool canDraw;
 
   const DrawingCanvas({
     super.key,
@@ -26,6 +27,7 @@ class DrawingCanvas extends StatefulWidget{
     this.onDrawingStrokeChanged,
     required this.canvasKey,
     this.backgroundImageListenable,
+    this.canDraw = true,
   });
 
   @override
@@ -41,6 +43,9 @@ class _DrawingCanvasState extends State<DrawingCanvas>{
   CurrentStrokeValueNotifier get _currentStroke => widget.currentStrokeListenable;
 
   void _onPointerDown(PointerDownEvent event) {
+
+    if(!widget.canDraw) return;
+
     final box = context.findRenderObject() as RenderBox?;
     if (box == null) return;
     final offset = box.globalToLocal(event.position);
@@ -57,6 +62,7 @@ class _DrawingCanvasState extends State<DrawingCanvas>{
   }
 
   void _onPointerMove(PointerMoveEvent event) {
+    if (!widget.canDraw) return;
     final box = context.findRenderObject() as RenderBox?;
     if (box == null) return;
     final offset = box.globalToLocal(event.position);
@@ -67,6 +73,8 @@ class _DrawingCanvasState extends State<DrawingCanvas>{
   }
 
   void _onPointerUp(PointerUpEvent event) {
+    if (!widget.canDraw) return;
+
     if (!_currentStroke.hasStroke) return;
     _strokes.value = List<Stroke>.from(_strokes.value)
       ..add(_currentStroke.value!);
