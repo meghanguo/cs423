@@ -1,6 +1,8 @@
-import 'dart:math';
 import 'package:flutter/material.dart';
-import 'package:painting_app_423/drawing_page.dart';
+import 'package:flutter/services.dart'; // For loading assets
+import 'dart:math' as math;
+import 'dart:convert';
+import 'package:painting_app_423/drawing_page.dart'; // Your custom DrawingPage
 
 void main() {
   runApp(const MyApp());
@@ -22,6 +24,46 @@ class MyApp extends StatelessWidget {
   }
 }
 
+class Point {
+  final double x;
+  final double y;
+
+  Point(this.x, this.y);
+
+  // Factory method to create a Point from JSON
+  factory Point.fromJson(Map<String, dynamic> json) {
+    return Point(json['x'], json['y']);
+  }
+
+  // Convert Point to JSON
+  Map<String, dynamic> toJson() => {
+    'x': x,
+    'y': y,
+  };
+}
+
+// Class to represent a gesture
+class Gesture {
+  final List<Point> points;
+  final String name;
+
+  Gesture(this.points, {this.name = ""});
+
+  // Factory method to create a Gesture from JSON
+  factory Gesture.fromJson(Map<String, dynamic> json) {
+    List<Point> points = (json['points'] as List)
+        .map((p) => Point.fromJson(p))
+        .toList();
+    return Gesture(points, name: json['name']);
+  }
+
+  // Convert Gesture to JSON
+  Map<String, dynamic> toJson() => {
+    'name': name,
+    'points': points.map((p) => p.toJson()).toList(),
+  };
+}
+
 class MyHomePage extends StatefulWidget {
   const MyHomePage({super.key, required this.title});
 
@@ -32,58 +74,108 @@ class MyHomePage extends StatefulWidget {
 }
 
 class _MyHomePageState extends State<MyHomePage> {
-  // Track the gesture
-  List<bool> _gestures = [false, false];
-
-  List<Offset> _points = [];
+  // Track the gesture templates
+  List<Gesture> gestureTemplates = [];
+  List<Offset> _points = []; // Store the drawn points
   bool _canDraw = true; // Control to allow redrawing
 
-  // Method to check if any gesture is detected
-  void _detectGesture(List<Offset> points) {
-    if (points.length < 4) return; // Need at least 4 points to form a plus
+  String s = 'No gesture recognized';
 
-    // Find extreme points to determine center
-    double minX = points.map((p) => p.dx).reduce(min);
-    double maxX = points.map((p) => p.dx).reduce(max);
-    double minY = points.map((p) => p.dy).reduce(min);
-    double maxY = points.map((p) => p.dy).reduce(max);
-
-    // Calculate the center of the drawn gesture
-    double centerX = (minX + maxX) / 2;
-    double centerY = (minY + maxY) / 2;
-
-    // Variables to track horizontal and vertical strokes
-    bool hasHorizontal = false;
-    bool hasVertical = false;
-
-    for (Offset point in points) {
-      // Check for horizontal strokes
-      if ((point.dy - centerY).abs() < 30 && point.dx >= minX && point.dx <= maxX) {
-        hasHorizontal = true;
-      }
-      // Check for vertical strokes
-      if ((point.dx - centerX).abs() < 30 && point.dy >= minY && point.dy <= maxY) {
-        hasVertical = true;
-      }
-    }
-
-    // Determine if both horizontal and vertical strokes are present
-    if (hasHorizontal && hasVertical) {
-      _gestures[0] = true; // Indicate a plus sign was detected
-    } else {
-      _gestures[0] = false; // No plus sign detected
-    }
-
-    print("Horizontal: $hasHorizontal, Vertical: $hasVertical, Gesture Detected: ${_gestures[0]}");
+  @override
+  void initState() {
+    super.initState();
+    loadGestureTemplates(); // Load templates when the app starts
   }
 
-  // Navigate to the new drawing screen
+  // Load saved gesture templates from assets/gestures
+  Future<void> loadGestureTemplates() async {
+    try {
+      // Get a list of JSON files in the assets gestures directory
+      List<String> gestureFiles = [
+        'assets/gestures/plus.json',
+        'assets/gestures/check.json',
+        // Add more files as needed
+      ];
+
+      // Load each file from assets and parse it into gesture templates
+      for (String file in gestureFiles) {
+        String jsonString = await rootBundle.loadString(file);
+        Map<String, dynamic> templateData = jsonDecode(jsonString);
+
+        // Extract the gesture name
+        String gestureName = templateData['name'];
+        List<Point> points = (templateData['points'] as List)
+            .map((p) => Point(p['x'], p['y']))
+            .toList();
+
+        Gesture gesture = Gesture(points, name: gestureName);
+        setState(() {
+          gestureTemplates.add(gesture);
+        });
+      }
+
+      print("Loaded gestures: $gestureTemplates"); // Debugging all loaded gestures
+    } catch (e) {
+      print("Error loading gesture templates: $e");
+    }
+  }
+
+  // Method to classify a gesture based on templates
+  String classifyGesture(Gesture candidate) {
+    double minDistance = double.infinity;
+    String recognizedGestureName = "No match";
+
+    for (Gesture template in gestureTemplates) {
+      print(template.name);
+      print(template.points);
+      double distance = calculateDistance(candidate.points, template.points);
+      if (distance < minDistance) {
+        minDistance = distance;
+        recognizedGestureName = template.name;
+      }
+    }
+    return recognizedGestureName;
+  }
+
+  // Calculate the distance between two gestures
+  double calculateDistance(List<Point> points1, List<Point> points2) {
+    List<Point> norm1 = normalize(points1);
+    List<Point> norm2 = normalize(points2);
+
+    double distance = 0.0;
+    for (int i = 0; i < math.min(norm1.length, norm2.length); i++) {
+      distance += math.sqrt(math.pow(norm1[i].x - norm2[i].x, 2) +
+          math.pow(norm1[i].y - norm2[i].y, 2));
+    }
+    return distance;
+  }
+
+  // Normalize points (translate and scale)
+  List<Point> normalize(List<Point> points) {
+    if (points.isEmpty) return points;
+
+    // Step 1: Center the points
+    double centroidX = points.map((p) => p.x).reduce((a, b) => a + b) / points.length;
+    double centroidY = points.map((p) => p.y).reduce((a, b) => a + b) / points.length;
+
+    List<Point> centered = points.map((p) => Point(p.x - centroidX, p.y - centroidY)).toList();
+
+    // Step 2: Scale the points to fit within a unit circle
+    double maxDistance = centered.map((p) => math.sqrt(math.pow(p.x, 2) + math.pow(p.y, 2)))
+        .reduce(math.max);
+    if (maxDistance == 0) return centered;
+
+    return centered.map((p) => Point(p.x / maxDistance, p.y / maxDistance)).toList();
+  }
+
+  // Method to open a new drawing screen
   void _openNewDrawingScreen() {
     Navigator.of(context).push(MaterialPageRoute(
       builder: (context) => DrawingPage(),
     ));
   }
 
+  // Gesture drawing and detection logic
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -94,38 +186,43 @@ class _MyHomePageState extends State<MyHomePage> {
       body: GestureDetector(
         onPanStart: (details) {
           if (_canDraw) {
-            setState(() {
-              _points = [details.localPosition];
-            });
+            _points = [details.localPosition]; // Start accumulating points
           }
         },
         onPanUpdate: (details) {
           if (_canDraw) {
             setState(() {
-              _points.add(details.localPosition); // Capture touch points
+              _points.add(details.localPosition); // Keep adding points
             });
           }
         },
-        onPanEnd: (details) {
+        onPanEnd: (details) async {
           if (_canDraw) {
-            setState(() {
-              _canDraw = false; // Disable further drawing until reset
-              _detectGesture(_points);
-              if (_gestures[0]) {
-                print("Plus sign detected!");
-                _openNewDrawingScreen(); // Open new screen on plus detection
-              } else {
-                print("No gesture detected");
-              }
-              _points.clear(); // Clear points after recognition
+            // Only recognize if there are points drawn
+            if (_points.isNotEmpty) {
+              Gesture candidateGesture = Gesture(
+                _points.map((offset) => Point(offset.dx, offset.dy)).toList(),
+              );
+              String gestureName = classifyGesture(candidateGesture);
 
-              // Allow redrawing after a short delay
-              Future.delayed(const Duration(milliseconds: 1), () {
-                setState(() {
-                  _canDraw = true; // Enable drawing again
-                });
+              // Show a SnackBar with the recognized gesture name
+              await ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(
+                  content: gestureName == "No match"? Text(s): Text('Recognized gesture: $gestureName'),
+                  duration: Duration(milliseconds: 600),
+                ),
+              ).closed;
+
+              if (gestureName == "plus") {
+                s = 'Starting a new drawing!';
+                _openNewDrawingScreen();
+              }
+              // Clear points after recognition
+              setState(() {
+                _points.clear(); // Clear points after recognition
+                gestureName = '';
               });
-            });
+            }
           }
         },
         child: Stack(
