@@ -93,7 +93,6 @@ class _MyHomePageState extends State<MyHomePage> {
       // Get a list of JSON files in the assets gestures directory
       List<String> gestureFiles = [
         'assets/gestures/plus.json',
-        'assets/gestures/check.json',
         // Add more files as needed
       ];
 
@@ -126,9 +125,8 @@ class _MyHomePageState extends State<MyHomePage> {
     String recognizedGestureName = "No match";
 
     for (Gesture template in gestureTemplates) {
-      print(template.name);
-      print(template.points);
       double distance = calculateDistance(candidate.points, template.points);
+      print('Comparing with template: ${template.name}, Distance: $distance');
       if (distance < minDistance) {
         minDistance = distance;
         recognizedGestureName = template.name;
@@ -142,30 +140,36 @@ class _MyHomePageState extends State<MyHomePage> {
     List<Point> norm1 = normalize(points1);
     List<Point> norm2 = normalize(points2);
 
+    int length = math.min(norm1.length, norm2.length);
     double distance = 0.0;
-    for (int i = 0; i < math.min(norm1.length, norm2.length); i++) {
+    for (int i = 0; i < length; i++) {
       distance += math.sqrt(math.pow(norm1[i].x - norm2[i].x, 2) +
           math.pow(norm1[i].y - norm2[i].y, 2));
     }
-    return distance;
+    return distance / length; // Return average distance
   }
 
   // Normalize points (translate and scale)
   List<Point> normalize(List<Point> points) {
     if (points.isEmpty) return points;
 
-    // Step 1: Center the points
-    double centroidX = points.map((p) => p.x).reduce((a, b) => a + b) / points.length;
-    double centroidY = points.map((p) => p.y).reduce((a, b) => a + b) / points.length;
+    // Step 1: Find the bounding box
+    double minX = points.map((p) => p.x).reduce(math.min);
+    double maxX = points.map((p) => p.x).reduce(math.max);
+    double minY = points.map((p) => p.y).reduce(math.min);
+    double maxY = points.map((p) => p.y).reduce(math.max);
 
-    List<Point> centered = points.map((p) => Point(p.x - centroidX, p.y - centroidY)).toList();
+    double width = maxX - minX;
+    double height = maxY - minY;
 
-    // Step 2: Scale the points to fit within a unit circle
-    double maxDistance = centered.map((p) => math.sqrt(math.pow(p.x, 2) + math.pow(p.y, 2)))
-        .reduce(math.max);
-    if (maxDistance == 0) return centered;
+    // If width or height is zero, return normalized points at (0, 0)
+    if (width == 0 || height == 0) return points.map((p) => Point(0, 0)).toList();
 
-    return centered.map((p) => Point(p.x / maxDistance, p.y / maxDistance)).toList();
+    return points.map((p) {
+      double normalizedX = (p.x - minX) / width;
+      double normalizedY = (p.y - minY) / height;
+      return Point(normalizedX, normalizedY);
+    }).toList();
   }
 
   // Method to open a new drawing screen
@@ -208,7 +212,7 @@ class _MyHomePageState extends State<MyHomePage> {
               // Show a SnackBar with the recognized gesture name
               await ScaffoldMessenger.of(context).showSnackBar(
                 SnackBar(
-                  content: gestureName == "No match"? Text(s): Text('Recognized gesture: $gestureName'),
+                  content: gestureName == "No match" ? Text(s) : Text('Recognized gesture: $gestureName'),
                   duration: Duration(milliseconds: 600),
                 ),
               ).closed;
