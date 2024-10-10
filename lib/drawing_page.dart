@@ -53,10 +53,13 @@ class Gesture {
 }
 
 class DrawingPage extends StatefulWidget {
-  const DrawingPage({super.key});
+  final Function(String, List<Stroke>) onSave;
+  final List<Stroke>? strokes; // Accept saved strokes
+
+  const DrawingPage({super.key, required this.onSave, this.strokes});
 
   @override
-  State<DrawingPage> createState() => _DrawingPageState();
+  _DrawingPageState createState() => _DrawingPageState();
 }
 
 class _DrawingPageState extends State<DrawingPage>
@@ -77,12 +80,20 @@ class _DrawingPageState extends State<DrawingPage>
   List<Gesture> gestureTemplates = [];
   List<Offset> _points = []; // Store the drawn points for gesture recognition
 
+  List<Stroke> strokes = [];
+  String recognizedGesture = '';
+  List<Offset?> _currentStroke = [];
+
   @override
   void initState() {
     super.initState();
     animationController = AnimationController(
         vsync: this, duration: const Duration(milliseconds: 300));
     loadGestureTemplates();
+    _canDraw = true;
+    if (widget.strokes != null) {
+      strokes = widget.strokes!;
+    }
   }
 
   // Load saved gesture templates from assets/gestures
@@ -199,7 +210,8 @@ class _DrawingPageState extends State<DrawingPage>
     // Classify the gesture
     String gestureName = classifyGesture(candidateGesture);
     if (gestureName == 'check') {
-      showSnackBar();
+      // showSnackBar();
+      showSaveDialog();
     }
   }
 
@@ -210,16 +222,55 @@ class _DrawingPageState extends State<DrawingPage>
 
   void _drawingMode() {
     setState(() {
+      _canDraw = !_canDraw;
       _isLocked = !_isLocked;
-      _canDraw = !_isLocked;
 
       // Show message based on the current mode
       final snackBar = SnackBar(
-        content: Text(_isLocked ? 'No Drawing Mode On' : 'Drawing Mode On'),
+        content: Text(_canDraw ? 'Drawing Mode On' : 'No Drawing Mode On'),
         duration: Duration(seconds: 2),
       );
       ScaffoldMessenger.of(context).showSnackBar(snackBar);
     });
+  }
+
+
+
+  // Method to show save prompt
+  Future<void> showSaveDialog() async {
+    final nameController = TextEditingController();
+
+    return showDialog<void>(
+      context: context,
+      barrierDismissible: false, // User must tap button
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: const Text('Save Drawing'),
+          content: TextField(
+            controller: nameController,
+            decoration: const InputDecoration(hintText: 'Enter drawing name'),
+          ),
+          actions: <Widget>[
+            TextButton(
+              child: const Text('Cancel'),
+              onPressed: () {
+                Navigator.of(context).pop();
+              },
+            ),
+            TextButton(
+              child: const Text('Save'),
+              onPressed: () {
+                if (nameController.text.isNotEmpty) {
+                  widget.onSave(nameController.text, strokes);
+                  Navigator.of(context).pop(); // Close dialog
+                  Navigator.of(context).pop(); // Return to main page
+                }
+              },
+            ),
+          ],
+        );
+      },
+    );
   }
 
   @override
