@@ -4,9 +4,7 @@ import 'dart:math' as math;
 import 'dart:convert';
 import 'package:painting_app_423/drawing_page.dart'; // Your custom DrawingPage
 import 'package:painting_app_423/stroke.dart'; // Import the Stroke classes
-import 'package:painting_app_423/pdollar_recognizer.dart';
-import 'package:painting_app_423/saved_drawings_page.dart';
-
+import 'package:flutter_js/flutter_js.dart';
 
 void main() {
   runApp(const MyApp());
@@ -78,9 +76,14 @@ class _MyHomePageState extends State<MyHomePage> {
   bool _canDraw = true; // Control to allow redrawing
   List<Map<String, dynamic>> savedDrawings = [];
 
+  late JavascriptRuntime jsRuntime;
+  String jsCode = ' ';
+
   @override
   void initState() {
     super.initState();
+    loadJsCode();
+    jsRuntime = getJavascriptRuntime();
     loadGestureTemplates(); // Load templates when the app starts
   }
 
@@ -172,6 +175,16 @@ class _MyHomePageState extends State<MyHomePage> {
     );
   }
 
+  Future<void> loadJsCode() async {
+    jsCode = await rootBundle.loadString('assets/test.js');
+  }
+
+  void runCustomJsFunction() {
+    jsRuntime.evaluate(jsCode);
+    final result = jsRuntime.evaluate('customJsFunction(3, 5)');
+    print('Result from JS: ${result.stringResult}');
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -181,6 +194,10 @@ class _MyHomePageState extends State<MyHomePage> {
       ),
       body: Column(
         children: [
+          ElevatedButton(
+            onPressed: runCustomJsFunction,
+            child: Text('Run Custom JS Function'),
+          ),
           Expanded(
             flex: 3,
             child: ListView.builder(
