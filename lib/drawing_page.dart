@@ -74,9 +74,6 @@ class _DrawingPageState extends State<DrawingPage>
   final CurrentStrokeValueNotifier currentStroke = CurrentStrokeValueNotifier();
   final ValueNotifier<List<Stroke>> allStrokes = ValueNotifier([]);
 
-  bool _isLocked = false;
-  bool _canDraw = false;
-
   List<Gesture> gestureTemplates = [];
   List<Offset> _points = []; // Store the drawn points for gesture recognition
 
@@ -90,7 +87,6 @@ class _DrawingPageState extends State<DrawingPage>
     animationController = AnimationController(
         vsync: this, duration: const Duration(milliseconds: 300));
     loadGestureTemplates();
-    _canDraw = true;
     if (widget.strokes != null) {
       strokes = widget.strokes!;
     }
@@ -182,20 +178,15 @@ class _DrawingPageState extends State<DrawingPage>
   }
 
   void onPanUpdate(DragUpdateDetails details) {
-    if (_canDraw) {
       RenderBox renderBox = context.findRenderObject() as RenderBox;
       Offset point = renderBox.globalToLocal(details.globalPosition);
       setState(() {
         _points.add(point);
       });
-    }
   }
 
   void onPanEnd(DragEndDetails details) {
-    if (_isLocked) {
       recognizeGesture();
-      _points.clear(); // Clear points after recognition
-    }
   }
 
   void recognizeGesture() {
@@ -210,8 +201,8 @@ class _DrawingPageState extends State<DrawingPage>
     // Classify the gesture
     String gestureName = classifyGesture(candidateGesture);
     if (gestureName == 'check') {
-      // showSnackBar();
       showSaveDialog();
+      _points.clear();
     }
   }
 
@@ -219,21 +210,6 @@ class _DrawingPageState extends State<DrawingPage>
     final snackBar = SnackBar(content: Text('Check mark recognized!'));
     ScaffoldMessenger.of(context).showSnackBar(snackBar);
   }
-
-  void _drawingMode() {
-    setState(() {
-      _canDraw = !_canDraw;
-      _isLocked = !_isLocked;
-
-      // Show message based on the current mode
-      final snackBar = SnackBar(
-        content: Text(_canDraw ? 'Drawing Mode On' : 'No Drawing Mode On'),
-        duration: Duration(seconds: 2),
-      );
-      ScaffoldMessenger.of(context).showSnackBar(snackBar);
-    });
-  }
-
 
 
   // Method to show save prompt
@@ -280,8 +256,8 @@ class _DrawingPageState extends State<DrawingPage>
         backgroundColor: Theme.of(context).colorScheme.inversePrimary,
       ),
       drawer: Drawer(
-        child: _canDraw
-            ? CanvasSideBar(
+        child:
+        CanvasSideBar(
           drawingTool: drawingTool,
           selectedColor: selectedColor,
           strokeSize: strokeSize,
@@ -290,7 +266,6 @@ class _DrawingPageState extends State<DrawingPage>
           allSketches: allStrokes,
           canvasGlobalKey: canvasGlobalKey,
         )
-            : null, // Disable drawer interaction when locked
       ),
       backgroundColor: Color(0xfff2f3f7),
       body: GestureDetector(
@@ -320,17 +295,8 @@ class _DrawingPageState extends State<DrawingPage>
                   currentStrokeListenable: currentStroke,
                   strokesListenable: allStrokes,
                   backgroundImageListenable: backgroundImage,
-                  canDraw: _canDraw, // Pass canDraw flag here
                 );
               },
-            ),
-            Positioned(
-              bottom: 20,
-              right: 20,
-              child: FloatingActionButton(
-                onPressed: _drawingMode,
-                child: Icon(_isLocked ? Icons.lock : Icons.lock_open),
-              ),
             ),
           ],
         ),
