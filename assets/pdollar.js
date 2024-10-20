@@ -173,12 +173,14 @@ function PDollarRecognizer() // constructor
 	this.Recognize = function(points)
 	{
 		var t0 = Date.now();
+		console.log('hello');
 		var candidate = new PointCloud("", points);
 
 		var u = -1;
 		var b = +Infinity;
 		for (var i = 0; i < this.PointClouds.length; i++) // for each point-cloud template
 		{
+		    console.log(candidate.Points);
 			var d = GreedyCloudMatch(candidate.Points, this.PointClouds[i]);
 			if (d < b) {
 				b = d; // best (least) distance
@@ -186,7 +188,7 @@ function PDollarRecognizer() // constructor
 			}
 		}
 		var t1 = Date.now();
-		return (u == -1) ? new Result("No match.", 0.0, t1-t0) : new Result(this.PointClouds[u].Name, b > 1.0 ? 1.0 / b : 1.0, t1-t0);
+		return (u == -1) ? "No match" : this.PointClouds[u].Name;
 	}
 	this.AddGesture = function(name, points)
 	{
@@ -213,6 +215,7 @@ function GreedyCloudMatch(points, P)
 	var step = Math.floor(Math.pow(points.length, 1.0 - e));
 	var min = +Infinity;
 	for (var i = 0; i < points.length; i += step) {
+//	    console.log(points);
 		var d1 = CloudDistance(points, P.Points, i);
 		var d2 = CloudDistance(P.Points, points, i);
 		min = Math.min(min, Math.min(d1, d2)); // min3
@@ -324,6 +327,8 @@ function PathLength(points) // length traversed by a point path
 }
 function Distance(p1, p2) // Euclidean distance between two points
 {
+//    console.log('p1', p1);
+//    console.log('p2', p2);
 	var dx = p2.X - p1.X;
 	var dy = p2.Y - p1.Y;
 	return Math.sqrt(dx * dx + dy * dy);

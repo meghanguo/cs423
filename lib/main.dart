@@ -5,6 +5,7 @@ import 'dart:convert';
 import 'package:painting_app_423/drawing_page.dart'; // Your custom DrawingPage
 import 'package:painting_app_423/stroke.dart'; // Import the Stroke classes
 import 'package:flutter_js/flutter_js.dart';
+import 'dart:convert'; // For jsonEncode
 
 void main() {
   runApp(const MyApp());
@@ -27,19 +28,18 @@ class MyApp extends StatelessWidget {
 }
 
 class Point {
-  final double x;
-  final double y;
+  final double X;
+  final double Y;
+  final int ID;
 
-  Point(this.x, this.y);
-
-  factory Point.fromJson(Map<String, dynamic> json) {
-    return Point(json['x'], json['y']);
+  Point(this.X, this.Y, this.ID);
+  Map<String, dynamic> toJson() {
+    return {
+      'x': X,
+      'y': X,
+      'ID': ID,
+    };
   }
-
-  Map<String, dynamic> toJson() => {
-    'x': x,
-    'y': y,
-  };
 }
 
 class Gesture {
@@ -47,18 +47,6 @@ class Gesture {
   final String name;
 
   Gesture(this.points, {this.name = ""});
-
-  factory Gesture.fromJson(Map<String, dynamic> json) {
-    List<Point> points = (json['points'] as List)
-        .map((p) => Point.fromJson(p))
-        .toList();
-    return Gesture(points, name: json['name']);
-  }
-
-  Map<String, dynamic> toJson() => {
-    'name': name,
-    'points': points.map((p) => p.toJson()).toList(),
-  };
 }
 
 class MyHomePage extends StatefulWidget {
@@ -72,7 +60,7 @@ class MyHomePage extends StatefulWidget {
 
 class _MyHomePageState extends State<MyHomePage> {
   List<Gesture> gestureTemplates = [];
-  List<Offset> _points = []; // Store the drawn points
+  List<Point> _points = []; // Store the drawn points
   bool _canDraw = true; // Control to allow redrawing
   List<Map<String, dynamic>> savedDrawings = [];
 
@@ -84,7 +72,6 @@ class _MyHomePageState extends State<MyHomePage> {
     super.initState();
     loadJsCode();
     jsRuntime = getJavascriptRuntime();
-    loadGestureTemplates(); // Load templates when the app starts
   }
 
   void addDrawing(String name, List<Stroke> strokes) {
@@ -96,79 +83,6 @@ class _MyHomePageState extends State<MyHomePage> {
     });
   }
 
-  Future<void> loadGestureTemplates() async {
-    try {
-      List<String> gestureFiles = [
-        'assets/gestures/plus.json',
-      ];
-
-      for (String file in gestureFiles) {
-        String jsonString = await rootBundle.loadString(file);
-        Map<String, dynamic> templateData = jsonDecode(jsonString);
-        String gestureName = templateData['name'];
-        List<Point> points = (templateData['points'] as List)
-            .map((p) => Point(p['x'], p['y']))
-            .toList();
-
-        Gesture gesture = Gesture(points, name: gestureName);
-        setState(() {
-          gestureTemplates.add(gesture);
-        });
-      }
-
-      print("Loaded gestures: $gestureTemplates");
-    } catch (e) {
-      print("Error loading gesture templates: $e");
-    }
-  }
-
-  String classifyGesture(Gesture candidate) {
-    double minDistance = double.infinity;
-    String recognizedGestureName = "No match";
-
-    for (Gesture template in gestureTemplates) {
-      double distance = calculateDistance(candidate.points, template.points);
-      if (distance < minDistance) {
-        minDistance = distance;
-        recognizedGestureName = template.name;
-      }
-    }
-    return recognizedGestureName;
-  }
-
-  double calculateDistance(List<Point> points1, List<Point> points2) {
-    List<Point> norm1 = normalize(points1);
-    List<Point> norm2 = normalize(points2);
-
-    int length = math.min(norm1.length, norm2.length);
-    double distance = 0.0;
-    for (int i = 0; i < length; i++) {
-      distance += math.sqrt(math.pow(norm1[i].x - norm2[i].x, 2) +
-          math.pow(norm1[i].y - norm2[i].y, 2));
-    }
-    return distance / length;
-  }
-
-  List<Point> normalize(List<Point> points) {
-    if (points.isEmpty) return points;
-
-    double minX = points.map((p) => p.x).reduce(math.min);
-    double maxX = points.map((p) => p.x).reduce(math.max);
-    double minY = points.map((p) => p.y).reduce(math.min);
-    double maxY = points.map((p) => p.y).reduce(math.max);
-
-    double width = maxX - minX;
-    double height = maxY - minY;
-
-    if (width == 0 || height == 0) return points.map((p) => Point(0, 0)).toList();
-
-    return points.map((p) {
-      double normalizedX = (p.x - minX) / width;
-      double normalizedY = (p.y - minY) / height;
-      return Point(normalizedX, normalizedY);
-    }).toList();
-  }
-
   void _openNewDrawingScreen() async {
     final result = await Navigator.of(context).push(
       MaterialPageRoute(builder: (context) => DrawingPage(onSave: addDrawing)),
@@ -176,13 +90,29 @@ class _MyHomePageState extends State<MyHomePage> {
   }
 
   Future<void> loadJsCode() async {
-    jsCode = await rootBundle.loadString('assets/test.js');
+    jsCode = await rootBundle.loadString('assets/pdollar.js');
   }
 
-  void runCustomJsFunction() {
+  String runCustomJsFunction(List<Point> points) {
+    List<Map<String, dynamic>> pointsJs = points.map((point) => point.toJson()).toList();
+
+    // Convert the points to JSON string
+    String jsonPoints = jsonEncode(pointsJs);
+
+    // Evaluate the JavaScript code
     jsRuntime.evaluate(jsCode);
-    final result = jsRuntime.evaluate('customJsFunction(3, 5)');
-    print('Result from JS: ${result.stringResult}');
+
+    // Print the jsonPoints to debug
+    print('JSON Points: $jsonPoints');
+
+    // Call the JavaScript Recognize function with the parsed JSON object
+    final result = jsRuntime.evaluate('new PDollarRecognizer().Recognize("$jsonDecode(jsonPoints)")');
+
+    // Get the result from JavaScript
+    String resultString = result.stringResult;
+
+    print('Result from JS: $resultString');
+    return resultString;
   }
 
   @override
@@ -194,10 +124,10 @@ class _MyHomePageState extends State<MyHomePage> {
       ),
       body: Column(
         children: [
-          ElevatedButton(
-            onPressed: runCustomJsFunction,
-            child: Text('Run Custom JS Function'),
-          ),
+          // ElevatedButton(
+          //   onPressed: runCustomJsFunction,
+          //   child: Text('Run Custom JS Function'),
+          // ),
           Expanded(
             flex: 3,
             child: ListView.builder(
@@ -227,38 +157,36 @@ class _MyHomePageState extends State<MyHomePage> {
             child: GestureDetector(
               onPanStart: (details) {
                 if (_canDraw) {
-                  _points = [details.localPosition];
+                  _points.add(Point(details.localPosition.dx, details.localPosition.dy, 0));
+                  // _points = [details.localPosition];
                 }
               },
               onPanUpdate: (details) {
                 if (_canDraw) {
                   setState(() {
-                    _points.add(details.localPosition);
+                    _points.add(Point(details.localPosition.dx, details.localPosition.dy, 0));
                   });
                 }
               },
               onPanEnd: (details) async {
                 if (_canDraw && _points.isNotEmpty) {
-                  Gesture candidateGesture = Gesture(
-                    _points.map((offset) => Point(offset.dx, offset.dy)).toList(),
-                  );
-                  String gestureName = classifyGesture(candidateGesture);
+                  // for (int i = 0; i < _points.length - 1; i++) {
+                  //   print("${_points[i].X}, ${_points[i].Y}");
+                  // }
+                  String gestureName = runCustomJsFunction(_points);
 
-                  await ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(
-                      content: Text(
-                        gestureName == "plus"
-                            ? 'Starting a new drawing!'
-                            : 'Recognized gesture: $gestureName',
-                      ),
-                      duration: Duration(milliseconds: 600),
-                    ),
-                  ).closed;
 
-                  if (gestureName == "plus") {
-                    _openNewDrawingScreen();
-                  }
-
+                  // await ScaffoldMessenger.of(context).showSnackBar(
+                  //   SnackBar(
+                  //     content: Text(
+                  //       gestureName == "plus"
+                  //           ? 'Starting a new drawing!'
+                  //           : 'Recognized gesture: $gestureName',
+                  //     ),
+                  //     duration: Duration(milliseconds: 600),
+                  //   ),
+                  // ).closed;
+                  //
                   setState(() {
                     _points.clear();
                   });
@@ -289,7 +217,7 @@ class _MyHomePageState extends State<MyHomePage> {
 }
 
 class GesturePainter extends CustomPainter {
-  final List<Offset> points;
+  final List<Point> points;
 
   GesturePainter({required this.points});
 
@@ -301,12 +229,12 @@ class GesturePainter extends CustomPainter {
       ..strokeCap = StrokeCap.round;
 
     for (int i = 0; i < points.length - 1; i++) {
-      canvas.drawLine(points[i], points[i + 1], paint);
+      canvas.drawLine(Offset(points[i].X, points[i].Y), Offset(points[i + 1].X, points[i + 1].Y), paint);
     }
   }
 
   @override
-  bool shouldRepaint(GesturePainter oldDelgate) {
-    return oldDelgate.points != points;
+  bool shouldRepaint(GesturePainter oldDelegate) {
+    return oldDelegate.points != points;
   }
 }
