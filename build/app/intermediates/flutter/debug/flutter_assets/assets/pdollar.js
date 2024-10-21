@@ -89,7 +89,7 @@ function Result(name, score, ms) // constructor
 //
 // PDollarRecognizer constants
 //
-const NumPointClouds = 16;
+const NumPointClouds = 1;
 const NumPoints = 32;
 const Origin = new Point(0,0,0);
 //
@@ -101,41 +101,69 @@ function PDollarRecognizer() // constructor
 	// one predefined point-cloud for each gesture
 	//
 	this.PointClouds = new Array(NumPointClouds);
-
-	this.PointClouds[0] = new PointCloud("T", new Array(
-		new Point(30,7,1),new Point(103,7,1),
-		new Point(66,7,2),new Point(66,87,2)
-	));
+//
+//	this.PointClouds[0] = new PointCloud("T", new Array(
+//		new Point(30,7,1),new Point(103,7,1),
+//		new Point(66,7,2),new Point(66,87,2)
+//	));
 
 	//
 	// The $P Point-Cloud Recognizer API begins here -- 3 methods: Recognize(), AddGesture(), DeleteUserGestures()
 	//
 	this.ProcessGesturesFile = function(file) {
-	    console.log("here");
+	    console.log("processing gestures file");
+
+	    const lines = file.split('\n');
+
+        let points = new Array();
+        let name = "";
+        let stroke_num = 0;
+        let first = true;
+        let curr = 0;
+
+	    lines.forEach((line) => {
+	        if (line.includes(',')) {
+	            var temp = line.split(',');
+	            var point = new Point(parseFloat(temp[0]), parseFloat(temp[1]), stroke_num);
+	            points.push(point);
+	        }
+	        else if (line.trim() === 'BEGIN') {
+	            stroke_num = 0;
+	        } else if (line.trim() === 'END') {
+	            stroke_num += 1;
+	        } else {
+	            if (!first) {
+	                this.PointClouds[curr] = new PointCloud(name, points);
+	                curr = curr + 1;
+	            }
+	            name = line.trim();
+	        }
+	    });
+
+	    this.PointClouds[curr] = new PointCloud(name, points);
 	}
 	this.Recognize = function(points)
 	{
-		const lineReader = require('line-reader')
-    	lineReader.eachLine('assets/gestures.txt'), (line, last) = &gt; {
-    	    console.log(line);
-    	});
-		var t0 = Date.now();
-		console.log('hello');
-		var candidate = new PointCloud("", points);
+	    let pointsAsJsonString = JSON.stringify(points);
+	    var pointsArray = JSON.parse(pointsAsJsonString); // jsonPoints is a string passed from Dart
+        let pointCloud = pointsArray.map(p => new Point(p.x, p.y, p.ID));
+		var candidate = new PointCloud("", pointCloud);
 
 		var u = -1;
-		var b = +Infinity;
+		var score = +Infinity;
 		for (var i = 0; i < this.PointClouds.length; i++) // for each point-cloud template
 		{
-//		    console.log(candidate.Points);
 			var d = GreedyCloudMatch(candidate.Points, this.PointClouds[i]);
-			if (d < b) {
-				b = d; // best (least) distance
+			if (d < score) {
+				score = d; // best (least) distance
 				u = i; // point-cloud index
 			}
 		}
-		var t1 = Date.now();
-		return (u == -1) ? "No match" : this.PointClouds[u].Name;
+		console.log(score);
+        score = Math.max((2.0 - score) / 2.0, 0.0);
+        console.log(score);
+        console.log(this.PointClouds[u].Name);
+		return (u == -1 || score < 0.5) ? "No match" : this.PointClouds[u].Name;
 	}
 	this.AddGesture = function(name, points)
 	{

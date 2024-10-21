@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart'; // For loading assets
 import 'package:painting_app_423/drawing_page.dart'; // Your custom DrawingPage
@@ -33,7 +35,7 @@ class Point {
   Map<String, dynamic> toJson() {
     return {
       'x': X,
-      'y': X,
+      'y': Y,
       'ID': ID,
     };
   }
@@ -76,7 +78,7 @@ class _MyHomePageState extends State<MyHomePage> {
     jsRuntime.evaluate(jsCode);
     jsRuntime.evaluate('var recognizer = new PDollarRecognizer();');
 
-    String fileContent = await rootBundle.loadString('assets/gestures.txt');
+    String fileContent = await rootBundle.loadString('assets/plus_gesture.txt');
     final result = jsRuntime.evaluate('recognizer.ProcessGesturesFile(`$fileContent`);');
     // print('Result from JS after processing file: ${result.stringResult}');
   }
@@ -97,23 +99,15 @@ class _MyHomePageState extends State<MyHomePage> {
   }
 
   String pDollarRecognizer(List<Point> points) {
+    String pointsAsJson = jsonEncode(points);
+    print(pointsAsJson);
     // List<Map<String, dynamic>> pointsJs = points.map((point) => point.toJson()).toList();
 
-    // Define an array of points in JavaScript to pass to the Recognize function
-    final jsPointsArray = '''
-      [
-        { "X": 30, "Y": 7, "ID": 1 },
-        { "X": 103, "Y": 7, "ID": 1 },
-        { "X": 66, "Y": 7, "ID": 2 },
-        { "X": 66, "Y": 87, "ID": 2 }
-      ]
-    ''';
-
     // Call the Recognize function and pass the points array
-    final result = jsRuntime.evaluate('recognizer.Recognize($jsPointsArray);');
+    final result = jsRuntime.evaluate('recognizer.Recognize($pointsAsJson);');
 
     // Process the result (assumes result is a JSON-like structure)
-    // print('Result from JS (PointCloud): ${result.stringResult}');
+    print('Result from JS (PointCloud): ${result.stringResult}');
 
     return "";
   }
@@ -127,10 +121,6 @@ class _MyHomePageState extends State<MyHomePage> {
       ),
       body: Column(
         children: [
-          // ElevatedButton(
-          //   onPressed: runCustomJsFunction,
-          //   child: Text('Run Custom JS Function'),
-          // ),
           Expanded(
             flex: 3,
             child: ListView.builder(
@@ -173,23 +163,14 @@ class _MyHomePageState extends State<MyHomePage> {
               },
               onPanEnd: (details) async {
                 if (_canDraw && _points.isNotEmpty) {
-                  // for (int i = 0; i < _points.length - 1; i++) {
-                  //   print("${_points[i].X}, ${_points[i].Y}");
-                  // }
+                  for (int i = 0; i < _points.length - 1; i++) {
+                    print("${_points[i].X}, ${_points[i].Y}");
+                  }
                   String gestureName = pDollarRecognizer(_points);
 
+                  // print("gesture");
+                  // print(gestureName);
 
-                  // await ScaffoldMessenger.of(context).showSnackBar(
-                  //   SnackBar(
-                  //     content: Text(
-                  //       gestureName == "plus"
-                  //           ? 'Starting a new drawing!'
-                  //           : 'Recognized gesture: $gestureName',
-                  //     ),
-                  //     duration: Duration(milliseconds: 600),
-                  //   ),
-                  // ).closed;
-                  //
                   setState(() {
                     _points.clear();
                   });
