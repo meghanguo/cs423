@@ -196,6 +196,10 @@ class _MyHomePageState extends State<MyHomePage> {
           ),
         ],
       ),
+      floatingActionButton: FloatingActionButton(
+          child: const Icon(Icons.add),
+          onPressed: _openNewDrawingScreen,
+      ),
     );
   }
 }

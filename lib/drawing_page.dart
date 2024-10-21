@@ -11,6 +11,9 @@ import 'drawing_tool.dart';
 import 'package:flutter/services.dart'; // For loading assets
 import 'dart:convert';
 import 'dart:math' as math;
+import 'color_palette.dart';
+import 'package:font_awesome_flutter/font_awesome_flutter.dart';
+
 
 class Point {
   final double x;
@@ -52,6 +55,38 @@ class Gesture {
   };
 }
 
+class _IconBox extends StatelessWidget {
+  final IconData iconData;
+  final bool selected;
+  final VoidCallback onTap;
+  final String tooltip;
+
+  const _IconBox({
+    required this.iconData,
+    required this.selected,
+    required this.onTap,
+    required this.tooltip,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        padding: const EdgeInsets.all(8.0),
+        decoration: BoxDecoration(
+          border: Border.all(color: selected ? Colors.blue : Colors.grey),
+          borderRadius: BorderRadius.circular(8.0),
+        ),
+        child: Tooltip(
+          message: tooltip,
+          child: Icon(iconData, color: selected ? Colors.blue : Colors.black),
+        ),
+      ),
+    );
+  }
+}
+
 class DrawingPage extends StatefulWidget {
   final Function(String, List<Stroke>) onSave;
   final List<Stroke>? strokes; // Accept saved strokes
@@ -81,100 +116,16 @@ class _DrawingPageState extends State<DrawingPage>
   String recognizedGesture = '';
   List<Offset?> _currentStroke = [];
 
+  Offset? _currentPointerPosition;
+
   @override
   void initState() {
     super.initState();
     animationController = AnimationController(
         vsync: this, duration: const Duration(milliseconds: 300));
-    loadGestureTemplates();
     if (widget.strokes != null) {
       strokes = widget.strokes!;
     }
-  }
-
-  // Load saved gesture templates from assets/gestures
-  Future<void> loadGestureTemplates() async {
-    try {
-      // Get a list of JSON files in the assets gestures directory
-      List<String> gestureFiles = [
-        'assets/gestures/check.json', // Make sure this file exists
-        // Add more files as needed
-      ];
-
-      // Load each file from assets and parse it into gesture templates
-      for (String file in gestureFiles) {
-        String jsonString = await rootBundle.loadString(file);
-        Map<String, dynamic> templateData = jsonDecode(jsonString);
-
-        // Extract the gesture name
-        String gestureName = templateData['name'];
-        List<Point> points = (templateData['points'] as List)
-            .map((p) => Point(p['x'], p['y']))
-            .toList();
-
-        Gesture gesture = Gesture(points, name: gestureName);
-        setState(() {
-          gestureTemplates.add(gesture);
-        });
-      }
-
-      print("Loaded gestures: $gestureTemplates"); // Debugging all loaded gestures
-    } catch (e) {
-      print("Error loading gesture templates: $e");
-    }
-  }
-
-  // Method to classify a gesture based on templates
-  String classifyGesture(Gesture candidate) {
-    double minDistance = double.infinity;
-    String recognizedGestureName = "No match";
-
-    for (Gesture template in gestureTemplates) {
-      double distance = calculateDistance(candidate.points, template.points);
-      print('Comparing with template: ${template.name}, Distance: $distance');
-      if (distance < minDistance) {
-        minDistance = distance;
-        recognizedGestureName = template.name;
-      }
-    }
-    return recognizedGestureName;
-  }
-
-  // Calculate the distance between two gestures
-  double calculateDistance(List<Point> points1, List<Point> points2) {
-    List<Point> norm1 = normalize(points1);
-    List<Point> norm2 = normalize(points2);
-
-    int length = math.min(norm1.length, norm2.length);
-    double distance = 0.0;
-    for (int i = 0; i < length; i++) {
-      distance += math.sqrt(math.pow(norm1[i].x - norm2[i].x, 2) +
-          math.pow(norm1[i].y - norm2[i].y, 2));
-    }
-    return distance / length; // Return average distance
-  }
-
-  // Normalize points (translate and scale)
-  List<Point> normalize(List<Point> points) {
-    if (points.isEmpty) return points;
-
-    // Step 1: Find the bounding box
-    double minX = points.map((p) => p.x).reduce(math.min);
-    double maxX = points.map((p) => p.x).reduce(math.max);
-    double minY = points.map((p) => p.y).reduce(math.min);
-    double maxY = points.map((p) => p.y).reduce(math.max);
-
-    double width = maxX - minX;
-    double height = maxY - minY;
-
-    // If width or height is zero, return normalized points at (0, 0)
-    if (width == 0 || height == 0) return points.map((p) => Point(0, 0)).toList();
-
-    return points.map((p) {
-      double normalizedX = (p.x - minX) / width;
-      double normalizedY = (p.y - minY) / height;
-      return Point(normalizedX, normalizedY);
-    }).toList();
   }
 
   void onPanUpdate(DragUpdateDetails details) {
@@ -182,6 +133,7 @@ class _DrawingPageState extends State<DrawingPage>
       Offset point = renderBox.globalToLocal(details.globalPosition);
       setState(() {
         _points.add(point);
+        _currentPointerPosition = point;
       });
   }
 
@@ -195,15 +147,6 @@ class _DrawingPageState extends State<DrawingPage>
         .map((offset) => Point(offset.dx, offset.dy))
         .toList();
 
-    // Create a candidate gesture
-    Gesture candidateGesture = Gesture(normalizedPoints);
-
-    // Classify the gesture
-    String gestureName = classifyGesture(candidateGesture);
-    if (gestureName == 'check') {
-      showSaveDialog();
-      _points.clear();
-    }
   }
 
   void showSnackBar() {
@@ -249,57 +192,184 @@ class _DrawingPageState extends State<DrawingPage>
     );
   }
 
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        backgroundColor: Theme.of(context).colorScheme.inversePrimary,
-      ),
-      drawer: Drawer(
-        child:
-        CanvasSideBar(
-          drawingTool: drawingTool,
-          selectedColor: selectedColor,
-          strokeSize: strokeSize,
-          eraserSize: eraserSize,
-          currentSketch: currentStroke,
-          allSketches: allStrokes,
-          canvasGlobalKey: canvasGlobalKey,
-        )
-      ),
-      backgroundColor: Color(0xfff2f3f7),
-      body: GestureDetector(
-        onPanUpdate: onPanUpdate,
-        onPanEnd: onPanEnd,
-        child: Stack(
-          children: [
-            AnimatedBuilder(
-              animation: Listenable.merge([
-                currentStroke,
-                allStrokes,
-                selectedColor,
-                strokeSize,
-                eraserSize,
-                drawingTool,
-                backgroundImage,
-              ]),
-              builder: (context, _) {
-                return DrawingCanvas(
-                  options: DrawingCanvasOptions(
-                    currentTool: drawingTool.value,
-                    size: strokeSize.value,
-                    strokeColor: selectedColor.value,
-                    backgroundColor: Color(0xfff2f3f7),
-                  ),
-                  canvasKey: canvasGlobalKey,
-                  currentStrokeListenable: currentStroke,
-                  strokesListenable: allStrokes,
-                  backgroundImageListenable: backgroundImage,
-                );
-              },
+      body: CustomScrollView(
+        slivers: [
+          SliverAppBar(
+            backgroundColor: Theme.of(context).colorScheme.inversePrimary,
+            expandedHeight: 230.0,  // Adjust the height based on your needs
+            floating: false,
+            pinned: true,
+            flexibleSpace: FlexibleSpaceBar(
+              background: Container(
+                padding: const EdgeInsets.fromLTRB(40.0, 10.0, 10.0, 10.0),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const SizedBox(height: 60),  // Adjust spacing to look good inside AppBar
+                    Row(
+                      crossAxisAlignment: CrossAxisAlignment.center,
+                      children: [
+                        ValueListenableBuilder<DrawingTool>(
+                          valueListenable: drawingTool,
+                          builder: (context, tool, child) {
+                            return _IconBox(
+                              iconData: FontAwesomeIcons.pencil,
+                              selected: tool == DrawingTool.pencil,
+                              onTap: () {
+                                drawingTool.value = DrawingTool.pencil;
+                                // Optionally force a rebuild for the sliders if needed
+                                setState(() {});
+                              },
+                              tooltip: 'Pencil',
+                            );
+                          },
+                        ),
+                        ValueListenableBuilder<DrawingTool>(
+                          valueListenable: drawingTool,
+                          builder: (context, tool, child) {
+                            return _IconBox(
+                              iconData: FontAwesomeIcons.eraser,
+                              selected: tool == DrawingTool.eraser,
+                              onTap: () {
+                                drawingTool.value = DrawingTool.eraser;
+                                // Optionally force a rebuild for the sliders if needed
+                                setState(() {});
+                              },
+                              tooltip: 'Eraser',
+                            );
+                          },
+                        ),
+                        Expanded(
+                          child: Padding(
+                            padding: const EdgeInsets.only(left: 20.0),
+                            child: AnimatedSwitcher(
+                              duration: Duration(milliseconds: 300),
+                              child: drawingTool.value == DrawingTool.pencil
+                                  ? Row(
+                                key: ValueKey('pencilSlider'),
+                                children: [
+                                  const Text(
+                                    'Stroke Size: ',
+                                    style: TextStyle(fontSize: 12),
+                                  ),
+                                  Expanded(
+                                    child: Slider(
+                                      value: strokeSize.value,
+                                      min: 0,
+                                      max: 50,
+                                      onChanged: (val) {
+                                        setState(() {
+                                          strokeSize.value = val;
+                                        });
+                                      },
+                                    ),
+                                  ),
+                                ],
+                              )
+                                  : Row(
+                                key: ValueKey('eraserSlider'),
+                                children: [
+                                  const Text(
+                                    'Eraser Size: ',
+                                    style: TextStyle(fontSize: 12),
+                                  ),
+                                  Expanded(
+                                    child: Slider(
+                                      value: eraserSize.value,
+                                      min: 0,
+                                      max: 80,
+                                      onChanged: (val) {
+                                        setState(() {
+                                          eraserSize.value = val;
+                                        });
+                                      },
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 10),
+                    const Text(
+                      'Colors',
+                      style: TextStyle(fontWeight: FontWeight.bold),
+                    ),
+                    const Divider(),
+                    ColorPalette(
+                      selectedColorListenable: selectedColor,
+                    ),
+                  ],
+                ),
+              ),
             ),
-          ],
-        ),
+          ),
+          // You can add more slivers below if needed or an empty SliverFillRemaining for the rest of the body
+          SliverFillRemaining(
+            child: Center(
+              child: GestureDetector(
+                onPanUpdate: onPanUpdate,
+                onPanEnd: (details) {
+                  setState(() {
+                    _currentPointerPosition = null; // Hide the dot when finished
+                  });
+                  onPanEnd(details);
+                },
+                child: SizedBox(
+                  height: MediaQuery.of(context).size.height - 230,
+                  child: Stack(
+                    children: [
+                      AnimatedBuilder(
+                        animation: Listenable.merge([
+                          currentStroke,
+                          allStrokes,
+                          selectedColor,
+                          strokeSize,
+                          eraserSize,
+                          drawingTool,
+                          backgroundImage,
+                        ]),
+                        builder: (context, _) {
+                          return DrawingCanvas(
+                            options: DrawingCanvasOptions(
+                              currentTool: drawingTool.value,
+                              size: strokeSize.value,
+                              strokeColor: selectedColor.value,
+                              backgroundColor: Color(0xfff2f3f7),
+                            ),
+                            canvasKey: canvasGlobalKey,
+                            currentStrokeListenable: currentStroke,
+                            strokesListenable: allStrokes,
+                            backgroundImageListenable: backgroundImage,
+                          );
+                        },
+                      ),
+                      if (_currentPointerPosition != null) // Draw only if the position is set
+                        Positioned(
+                          left: _currentPointerPosition!.dx - 20, // Center the dot
+                          top: _currentPointerPosition!.dy - 20,
+                          child: Container(
+                            width: 10,
+                            height: 10,
+                            decoration: BoxDecoration(
+                              border: Border.all(color: Colors.black, width: 2), // Black hollow circle
+                              shape: BoxShape.circle,
+                            ),
+                          ),
+                        ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }
