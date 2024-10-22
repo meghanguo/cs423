@@ -137,6 +137,7 @@ function PDollarRecognizer() // constructor
 	                curr = curr + 1;
 	            }
 	            name = line.trim();
+	            first = false;
 	        }
 	    });
 

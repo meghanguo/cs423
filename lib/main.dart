@@ -109,7 +109,7 @@ class _MyHomePageState extends State<MyHomePage> {
     // Process the result (assumes result is a JSON-like structure)
     print('Result from JS (PointCloud): ${result.stringResult}');
 
-    return "";
+    return result.stringResult;
   }
 
   @override
@@ -167,13 +167,16 @@ class _MyHomePageState extends State<MyHomePage> {
                     print("${_points[i].X}, ${_points[i].Y}");
                   }
                   String gestureName = pDollarRecognizer(_points);
+                  print(gestureName);
+                  if (gestureName == "plus") {
+                    _openNewDrawingScreen();
+                  }
 
-                  // print("gesture");
-                  // print(gestureName);
-
-                  setState(() {
-                    _points.clear();
-                  });
+                  if (gestureName == "plus" || 1 == 1) {
+                    setState(() {
+                      _points.clear();
+                    });
+                  }
                 }
               },
               child: Container(

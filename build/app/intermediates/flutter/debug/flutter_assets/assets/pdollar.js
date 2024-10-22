@@ -137,6 +137,7 @@ function PDollarRecognizer() // constructor
 	                curr = curr + 1;
 	            }
 	            name = line.trim();
+	            first = false;
 	        }
 	    });
 
@@ -145,7 +146,7 @@ function PDollarRecognizer() // constructor
 	this.Recognize = function(points)
 	{
 	    let pointsAsJsonString = JSON.stringify(points);
-	    var pointsArray = JSON.parse(pointsAsJsonString); // jsonPoints is a string passed from Dart
+	    var pointsArray = JSON.parse(pointsAsJsonString);
         let pointCloud = pointsArray.map(p => new Point(p.x, p.y, p.ID));
 		var candidate = new PointCloud("", pointCloud);
 
@@ -163,7 +164,7 @@ function PDollarRecognizer() // constructor
         score = Math.max((2.0 - score) / 2.0, 0.0);
         console.log(score);
         console.log(this.PointClouds[u].Name);
-		return (u == -1 || score < 0.5) ? "No match" : this.PointClouds[u].Name;
+		return (u == -1 || score == 0.0) ? "No match" : this.PointClouds[u].Name;
 	}
 	this.AddGesture = function(name, points)
 	{
@@ -190,7 +191,6 @@ function GreedyCloudMatch(points, P)
 	var step = Math.floor(Math.pow(points.length, 1.0 - e));
 	var min = +Infinity;
 	for (var i = 0; i < points.length; i += step) {
-//	    console.log(points);
 		var d1 = CloudDistance(points, P.Points, i);
 		var d2 = CloudDistance(P.Points, points, i);
 		min = Math.min(min, Math.min(d1, d2)); // min3
@@ -302,8 +302,6 @@ function PathLength(points) // length traversed by a point path
 }
 function Distance(p1, p2) // Euclidean distance between two points
 {
-//    console.log('p1', p1);
-//    console.log('p2', p2);
 	var dx = p2.X - p1.X;
 	var dy = p2.Y - p1.Y;
 	return Math.sqrt(dx * dx + dy * dy);
