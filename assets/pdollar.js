@@ -142,7 +142,8 @@ function PDollarRecognizer() // constructor
 	        }
 	    });
 
-	    this.PointClouds[curr] = new PointCloud(name, points);
+	    var temp = new PointCloud(name, points);
+        this.PointClouds.push(temp);
 	}
 	this.Recognize = function(points)
 	{
