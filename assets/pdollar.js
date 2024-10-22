@@ -100,7 +100,7 @@ function PDollarRecognizer() // constructor
 	//
 	// one predefined point-cloud for each gesture
 	//
-	this.PointClouds = new Array(NumPointClouds);
+	this.PointClouds = new Array();
 //
 //	this.PointClouds[0] = new PointCloud("T", new Array(
 //		new Point(30,7,1),new Point(103,7,1),
@@ -133,7 +133,8 @@ function PDollarRecognizer() // constructor
 	            stroke_num += 1;
 	        } else {
 	            if (!first) {
-	                this.PointClouds[curr] = new PointCloud(name, points);
+	                var temp = new PointCloud(name, points);
+	                this.PointClouds.push(temp);
 	                curr += 1;
 	            }
 	            name = line.trim();
@@ -154,12 +155,10 @@ function PDollarRecognizer() // constructor
 		var score = +Infinity;
 		for (var i = 0; i < this.PointClouds.length; i++) // for each point-cloud template
 		{
-		    if (this.PointClouds[i] != null) {
-			    var d = GreedyCloudMatch(candidate.Points, this.PointClouds[i]);
-			    if (d < score) {
-				    score = d; // best (least) distance
-				    u = i; // point-cloud index
-			    }
+		    var d = GreedyCloudMatch(candidate.Points, this.PointClouds[i]);
+			if (d < score) {
+			    score = d; // best (least) distance
+				u = i; // point-cloud index
 			}
 		}
         score = Math.max((2.0 - score) / 2.0, 0.0);

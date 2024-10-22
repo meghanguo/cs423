@@ -81,7 +81,7 @@ class _MyHomePageState extends State<MyHomePage> {
     jsRuntime.evaluate(jsCode);
     jsRuntime.evaluate('var recognizer = new PDollarRecognizer();');
 
-    String fileContent = await rootBundle.loadString('assets/plus_gesture.txt');
+    String fileContent = await rootBundle.loadString('assets/landing_page_gestures.txt');
     final result = jsRuntime.evaluate('recognizer.ProcessGesturesFile(`$fileContent`);');
     // print('Result from JS after processing file: ${result.stringResult}');
   }
