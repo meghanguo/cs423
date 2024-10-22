@@ -19,9 +19,9 @@ class CurrentStrokeValueNotifier extends ValueNotifier<Stroke?> {
       if (type == StrokeType.eraser) {
         return EraserStroke(
           points: [point],
-          color: color,
+          color: const Color(0xfff2f3f7),
           size: size,
-          opacity: opacity,
+          opacity: 1,
         );
       }
 

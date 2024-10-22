@@ -158,6 +158,7 @@ class _DrawingPageState extends State<DrawingPage>
   // Method to show save prompt
   Future<void> showSaveDialog() async {
     final nameController = TextEditingController();
+    print(MediaQuery.of(context).size.height - 230);
 
     return showDialog<void>(
       context: context,
@@ -199,8 +200,9 @@ class _DrawingPageState extends State<DrawingPage>
       body: CustomScrollView(
         slivers: [
           SliverAppBar(
+            automaticallyImplyLeading: false,
             backgroundColor: Theme.of(context).colorScheme.inversePrimary,
-            expandedHeight: 230.0,  // Adjust the height based on your needs
+            toolbarHeight: 100.0,  // Adjust the height based on your needs
             floating: false,
             pinned: true,
             flexibleSpace: FlexibleSpaceBar(
@@ -213,6 +215,10 @@ class _DrawingPageState extends State<DrawingPage>
                     Row(
                       crossAxisAlignment: CrossAxisAlignment.center,
                       children: [
+                        ColorPalette(
+                          selectedColorListenable: selectedColor,
+                        ),
+                        SizedBox(width: 15),
                         ValueListenableBuilder<DrawingTool>(
                           valueListenable: drawingTool,
                           builder: (context, tool, child) {
@@ -296,15 +302,7 @@ class _DrawingPageState extends State<DrawingPage>
                         ),
                       ],
                     ),
-                    const SizedBox(height: 10),
-                    const Text(
-                      'Colors',
-                      style: TextStyle(fontWeight: FontWeight.bold),
-                    ),
-                    const Divider(),
-                    ColorPalette(
-                      selectedColorListenable: selectedColor,
-                    ),
+                    const SizedBox(height: 10)
                   ],
                 ),
               ),

@@ -62,6 +62,7 @@ class _MyHomePageState extends State<MyHomePage> {
   List<Point> _points = []; // Store the drawn points
   bool _canDraw = true; // Control to allow redrawing
   List<Map<String, dynamic>> savedDrawings = [];
+  int numStrokes = 0;
 
   late JavascriptRuntime jsRuntime;
   String jsCode = ' ';
@@ -149,35 +150,44 @@ class _MyHomePageState extends State<MyHomePage> {
             flex: 1,
             child: GestureDetector(
               onPanStart: (details) {
-                if (_canDraw) {
-                  _points.add(Point(details.localPosition.dx, details.localPosition.dy, 0));
-                  // _points = [details.localPosition];
-                }
+                  _points.add(Point(details.localPosition.dx, details.localPosition.dy, numStrokes));
               },
               onPanUpdate: (details) {
-                if (_canDraw) {
                   setState(() {
-                    _points.add(Point(details.localPosition.dx, details.localPosition.dy, 0));
+                    _points.add(Point(details.localPosition.dx, details.localPosition.dy, numStrokes));
                   });
-                }
               },
               onPanEnd: (details) async {
-                if (_canDraw && _points.isNotEmpty) {
-                  for (int i = 0; i < _points.length - 1; i++) {
-                    print("${_points[i].X}, ${_points[i].Y}");
-                  }
-                  String gestureName = pDollarRecognizer(_points);
-                  print(gestureName);
-                  if (gestureName == "plus") {
-                    _openNewDrawingScreen();
+                if (_points.isNotEmpty) {
+                  // recognize for 2 stroke plus signs
+                  if (numStrokes == 1) {
+                    String gestureName = pDollarRecognizer(_points);
+                    if (gestureName == "plus") {
+                      _openNewDrawingScreen();
+                      setState(() {
+                        _points.clear();
+                      });
+                    }
+                    else {
+                      for (var point in _points) {
+                        if (point.ID != numStrokes) {
+                          _points.remove(point);
+                        }
+                      }
+                      numStrokes -= 1;
+                    }
                   }
 
-                  if (gestureName == "plus" || 1 == 1) {
+                  // recognize for 1 stroke plus signs
+                  String gestureName = pDollarRecognizer(_points);
+                  if (gestureName == "plus") {
+                    _openNewDrawingScreen();
                     setState(() {
                       _points.clear();
                     });
                   }
                 }
+                numStrokes += 1;
               },
               child: Container(
                 color: Colors.grey[200],
@@ -198,10 +208,6 @@ class _MyHomePageState extends State<MyHomePage> {
             ),
           ),
         ],
-      ),
-      floatingActionButton: FloatingActionButton(
-          child: const Icon(Icons.add),
-          onPressed: _openNewDrawingScreen,
       ),
     );
   }

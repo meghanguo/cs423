@@ -12,11 +12,11 @@ class ColorPalette extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    List<Color> colors = [
-      Colors.black,
-      Colors.white,
-      ...Colors.primaries,
-    ];
+    // List<Color> colors = [
+      // Colors.black,
+      // Colors.white,
+      // ...Colors.primaries,
+    // ];
     return ValueListenableBuilder(
       valueListenable: selectedColorListenable,
       builder: (context, selectedColor, child) {
@@ -25,45 +25,45 @@ class ColorPalette extends StatelessWidget {
           mainAxisAlignment: MainAxisAlignment.start,
           crossAxisAlignment: CrossAxisAlignment.center,
           children: [
-            Wrap(
-              alignment: WrapAlignment.center,
-              spacing: 2,
-              runSpacing: 2,
-              children: [
-                for (Color color in colors)
-                    GestureDetector(
-                      onTap: () => selectedColorListenable.value = color,
-                      child: Container(
-                        height: 25,
-                        width: 25,
-                        decoration: BoxDecoration(
-                          color: color,
-                          border: Border.all(
-                            color: selectedColor == color
-                                ? Colors.blue
-                                : Colors.grey,
-                            width: 1.5,
-                          ),
-                          borderRadius:
-                          const BorderRadius.all(Radius.circular(5)),
-                        ),
-                      ),
-                    ),
-              ],
-            ),
+            // Wrap(
+            //   alignment: WrapAlignment.center,
+            //   spacing: 2,
+            //   runSpacing: 2,
+            //   children: [
+            //     for (Color color in colors)
+            //         GestureDetector(
+            //           onTap: () => selectedColorListenable.value = color,
+            //           child: Container(
+            //             height: 25,
+            //             width: 25,
+            //             decoration: BoxDecoration(
+            //               color: color,
+            //               border: Border.all(
+            //                 color: selectedColor == color
+            //                     ? Colors.blue
+            //                     : Colors.grey,
+            //                 width: 1.5,
+            //               ),
+            //               borderRadius:
+            //               const BorderRadius.all(Radius.circular(5)),
+            //             ),
+            //           ),
+            //         ),
+            //   ],
+            // ),
             const SizedBox(height: 10),
             Row(
               mainAxisSize: MainAxisSize.min,
               children: [
-                Container(
-                  height: 30,
-                  width: 30,
-                  decoration: BoxDecoration(
-                    color: selectedColor,
-                    border: Border.all(color: Colors.blue, width: 1.5),
-                    borderRadius: const BorderRadius.all(Radius.circular(5)),
-                  ),
-                ),
+                // Container(
+                //   height: 30,
+                //   width: 30,
+                //   decoration: BoxDecoration(
+                //     color: selectedColor,
+                //     border: Border.all(color: Colors.blue, width: 1.5),
+                //     borderRadius: const BorderRadius.all(Radius.circular(5)),
+                //   ),
+                // ),
                 const SizedBox(width: 10),
                 GestureDetector(
                     onTap: () {
