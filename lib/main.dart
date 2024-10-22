@@ -5,6 +5,7 @@ import 'package:flutter/services.dart'; // For loading assets
 import 'package:painting_app_423/drawing_page.dart'; // Your custom DrawingPage
 import 'package:painting_app_423/stroke.dart'; // Import the Stroke classes
 import 'package:flutter_js/flutter_js.dart';
+import 'package:win32/win32.dart';
 
 void main() {
   runApp(const MyApp());
@@ -62,7 +63,8 @@ class _MyHomePageState extends State<MyHomePage> {
   List<Point> _points = []; // Store the drawn points
   bool _canDraw = true; // Control to allow redrawing
   List<Map<String, dynamic>> savedDrawings = [];
-  int numStrokes = 0;
+  bool firstStroke = true;
+  int strokeNum = 1;
 
   late JavascriptRuntime jsRuntime;
   String jsCode = ' ';
@@ -93,7 +95,7 @@ class _MyHomePageState extends State<MyHomePage> {
     });
   }
 
-  Future<void> _openNewDrawingScreen(BuildContext context) async {
+  Future<void> _openNewDrawingScreen() async {
     final bool? confirmNewDrawing = await showDialog(
       context: context,
       builder: (BuildContext context) {
@@ -133,6 +135,20 @@ class _MyHomePageState extends State<MyHomePage> {
     return result.stringResult;
   }
 
+  Future<void> keepLastStroke() async{
+    List<Point> pointsToRemove = [];
+
+    for (var point in _points) {
+      if (point.ID != strokeNum) {
+        pointsToRemove.add(point);
+      }
+    }
+
+    setState(() {
+      _points.removeWhere((point) => pointsToRemove.contains(point));
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -152,7 +168,6 @@ class _MyHomePageState extends State<MyHomePage> {
                   onTap: () {
                     List<Stroke> strokes = savedDrawings[index]['strokes'];
                     String drawingName = savedDrawings[index]['name'];
-
                     Navigator.of(context).push(
                       MaterialPageRoute(
                         builder: (context) => DrawingPage(
@@ -170,44 +185,37 @@ class _MyHomePageState extends State<MyHomePage> {
             flex: 1,
             child: GestureDetector(
               onPanStart: (details) {
-                  _points.add(Point(details.localPosition.dx, details.localPosition.dy, numStrokes));
+                  _points.add(Point(details.localPosition.dx, details.localPosition.dy, strokeNum));
               },
               onPanUpdate: (details) {
                   setState(() {
-                    _points.add(Point(details.localPosition.dx, details.localPosition.dy, numStrokes));
+                    _points.add(Point(details.localPosition.dx, details.localPosition.dy, strokeNum));
                   });
               },
               onPanEnd: (details) async {
                 if (_points.isNotEmpty) {
                   // recognize for 2 stroke plus signs
-                  if (numStrokes == 1) {
+                  if (!firstStroke) {
                     String gestureName = pDollarRecognizer(_points);
                     if (gestureName == "plus") {
-                      _openNewDrawingScreen(context);
-                      setState(() {
-                        _points.clear();
-                      });
+                      _points.clear();
+                      _openNewDrawingScreen();
                     }
                     else {
-                      for (var point in _points) {
-                        if (point.ID != numStrokes) {
-                          _points.remove(point);
-                        }
-                      }
-                      numStrokes -= 1;
+                      await keepLastStroke();
                     }
                   }
 
                   // recognize for 1 stroke plus signs
                   String gestureName = pDollarRecognizer(_points);
                   if (gestureName == "plus") {
-                    _openNewDrawingScreen(context);
-                    setState(() {
-                      _points.clear();
-                    });
+                    _points.clear();
+                    _openNewDrawingScreen();
                   }
+
+                  strokeNum += 1;
+                  firstStroke = false;
                 }
-                numStrokes += 1;
               },
               child: Container(
                 color: Colors.grey[200],

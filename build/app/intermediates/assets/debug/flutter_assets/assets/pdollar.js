@@ -160,10 +160,7 @@ function PDollarRecognizer() // constructor
 				u = i; // point-cloud index
 			}
 		}
-		console.log(score);
         score = Math.max((2.0 - score) / 2.0, 0.0);
-        console.log(score);
-        console.log(this.PointClouds[u].Name);
 		return (u == -1 || score == 0.0) ? "No match" : this.PointClouds[u].Name;
 	}
 	this.AddGesture = function(name, points)
