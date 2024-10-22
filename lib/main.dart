@@ -93,22 +93,42 @@ class _MyHomePageState extends State<MyHomePage> {
     });
   }
 
-  void _openNewDrawingScreen() async {
-    final result = await Navigator.of(context).push(
-      MaterialPageRoute(builder: (context) => DrawingPage(onSave: addDrawing)),
+  Future<void> _openNewDrawingScreen(BuildContext context) async {
+    final bool? confirmNewDrawing = await showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: Text("Start new drawing"),
+          actions: <Widget>[
+            TextButton(
+              child: Text("Cancel"),
+              onPressed: () {
+                Navigator.of(context).pop(false);
+              },
+            ),
+            TextButton(
+              child: Text("Yes"),
+              onPressed: () {
+                Navigator.of(context).pop(true);
+              },
+            ),
+          ],
+        );
+      },
     );
+
+    if (confirmNewDrawing == true) {
+      final result = await Navigator.of(context).push(
+        MaterialPageRoute(builder: (context) => DrawingPage(onSave: addDrawing)),
+      );
+    }
   }
 
   String pDollarRecognizer(List<Point> points) {
     String pointsAsJson = jsonEncode(points);
-    print(pointsAsJson);
-    // List<Map<String, dynamic>> pointsJs = points.map((point) => point.toJson()).toList();
 
     // Call the Recognize function and pass the points array
     final result = jsRuntime.evaluate('recognizer.Recognize($pointsAsJson);');
-
-    // Process the result (assumes result is a JSON-like structure)
-    print('Result from JS (PointCloud): ${result.stringResult}');
 
     return result.stringResult;
   }
@@ -163,7 +183,7 @@ class _MyHomePageState extends State<MyHomePage> {
                   if (numStrokes == 1) {
                     String gestureName = pDollarRecognizer(_points);
                     if (gestureName == "plus") {
-                      _openNewDrawingScreen();
+                      _openNewDrawingScreen(context);
                       setState(() {
                         _points.clear();
                       });
@@ -181,7 +201,7 @@ class _MyHomePageState extends State<MyHomePage> {
                   // recognize for 1 stroke plus signs
                   String gestureName = pDollarRecognizer(_points);
                   if (gestureName == "plus") {
-                    _openNewDrawingScreen();
+                    _openNewDrawingScreen(context);
                     setState(() {
                       _points.clear();
                     });
