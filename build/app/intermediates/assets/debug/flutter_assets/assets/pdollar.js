@@ -89,7 +89,7 @@ function Result(name, score, ms) // constructor
 //
 // PDollarRecognizer constants
 //
-const NumPointClouds = 1;
+const NumPointClouds = 20;
 const NumPoints = 32;
 const Origin = new Point(0,0,0);
 //
@@ -134,7 +134,7 @@ function PDollarRecognizer() // constructor
 	        } else {
 	            if (!first) {
 	                this.PointClouds[curr] = new PointCloud(name, points);
-	                curr = curr + 1;
+	                curr += 1;
 	            }
 	            name = line.trim();
 	            first = false;
@@ -154,10 +154,12 @@ function PDollarRecognizer() // constructor
 		var score = +Infinity;
 		for (var i = 0; i < this.PointClouds.length; i++) // for each point-cloud template
 		{
-			var d = GreedyCloudMatch(candidate.Points, this.PointClouds[i]);
-			if (d < score) {
-				score = d; // best (least) distance
-				u = i; // point-cloud index
+		    if (this.PointClouds[i] != null) {
+			    var d = GreedyCloudMatch(candidate.Points, this.PointClouds[i]);
+			    if (d < score) {
+				    score = d; // best (least) distance
+				    u = i; // point-cloud index
+			    }
 			}
 		}
         score = Math.max((2.0 - score) / 2.0, 0.0);

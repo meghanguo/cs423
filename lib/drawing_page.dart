@@ -102,7 +102,7 @@ class _DrawingPageState extends State<DrawingPage>
   late final AnimationController animationController;
   final ValueNotifier<Color> selectedColor = ValueNotifier(Colors.black);
   final ValueNotifier<double> strokeSize = ValueNotifier(10.0);
-  final ValueNotifier<double> eraserSize = ValueNotifier(30.0);
+  final ValueNotifier<double> eraserSize = ValueNotifier(10.0);
   final ValueNotifier<DrawingTool> drawingTool = ValueNotifier(DrawingTool.pencil);
   final GlobalKey canvasGlobalKey = GlobalKey();
   final ValueNotifier<ui.Image?> backgroundImage = ValueNotifier(null);
@@ -146,14 +146,12 @@ class _DrawingPageState extends State<DrawingPage>
     List<Point> normalizedPoints = _points
         .map((offset) => Point(offset.dx, offset.dy))
         .toList();
-
   }
 
   void showSnackBar() {
     final snackBar = SnackBar(content: Text('Check mark recognized!'));
     ScaffoldMessenger.of(context).showSnackBar(snackBar);
   }
-
 
   // Method to show save prompt
   Future<void> showSaveDialog() async {
@@ -287,7 +285,7 @@ class _DrawingPageState extends State<DrawingPage>
                                     child: Slider(
                                       value: eraserSize.value,
                                       min: 0,
-                                      max: 80,
+                                      max: 50,
                                       onChanged: (val) {
                                         setState(() {
                                           eraserSize.value = val;
@@ -337,7 +335,7 @@ class _DrawingPageState extends State<DrawingPage>
                           return DrawingCanvas(
                             options: DrawingCanvasOptions(
                               currentTool: drawingTool.value,
-                              size: strokeSize.value,
+                              size: drawingTool.value == DrawingTool.eraser ? eraserSize.value : strokeSize.value,
                               strokeColor: selectedColor.value,
                               backgroundColor: Color(0xfff2f3f7),
                             ),
