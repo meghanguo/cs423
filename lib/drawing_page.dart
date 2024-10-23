@@ -342,7 +342,7 @@ class _DrawingPageState extends State<DrawingPage>
                   onPanUpdate: (details) {
                     setState(() {
                       _points.add(Point(details.localPosition.dx, details.localPosition.dy, 0));
-
+                      _currentPointerPosition = details.localPosition;
                     });
 
                   },
