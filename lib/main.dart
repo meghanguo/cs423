@@ -156,34 +156,29 @@ class _MyHomePageState extends State<MyHomePage> {
         backgroundColor: Theme.of(context).colorScheme.inversePrimary,
         title: Text(widget.title),
       ),
-      body: Column(
+      body: Stack(
         children: [
-          Expanded(
-            flex: 3,
-            child: ListView.builder(
-              itemCount: savedDrawings.length,
-              itemBuilder: (context, index) {
-                return ListTile(
-                  title: Text(savedDrawings[index]['name']),
-                  onTap: () {
-                    List<Stroke> strokes = savedDrawings[index]['strokes'];
-                    String drawingName = savedDrawings[index]['name'];
-                    Navigator.of(context).push(
-                      MaterialPageRoute(
-                        builder: (context) => DrawingPage(
-                          onSave: addDrawing,
-                          strokes: strokes, // Pass saved strokes to the DrawingPage
-                        ),
-                      ),
-                    );
-                  },
-                );
-              },
-            ),
-          ),
-          Expanded(
-            flex: 1,
-            child: GestureDetector(
+          // ListView.builder(
+          //     itemCount: savedDrawings.length,
+          //     itemBuilder: (context, index) {
+          //       return ListTile(
+          //         title: Text(savedDrawings[index]['name']),
+          //         onTap: () {
+          //           List<Stroke> strokes = savedDrawings[index]['strokes'];
+          //           String drawingName = savedDrawings[index]['name'];
+          //           Navigator.of(context).push(
+          //             MaterialPageRoute(
+          //               builder: (context) => DrawingPage(
+          //                 onSave: addDrawing,
+          //                 strokes: strokes, // Pass saved strokes to the DrawingPage
+          //               ),
+          //             ),
+          //           );
+          //         },
+          //       );
+          //     },
+          //   ),
+      GestureDetector(
               onPanStart: (details) {
                   _points.add(Point(details.localPosition.dx, details.localPosition.dy, strokeNum));
               },
@@ -219,24 +214,7 @@ class _MyHomePageState extends State<MyHomePage> {
                   firstStroke = false;
                 }
               },
-              child: Container(
-                color: Colors.grey[200],
-                child: Stack(
-                  children: [
-                    CustomPaint(
-                      painter: GesturePainter(points: _points),
-                      child: Center(
-                        child: Text(
-                          'Draw plus sign here to start new drawing',
-                          style: TextStyle(color: Colors.black38),
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
             ),
-          ),
         ],
       ),
     );
