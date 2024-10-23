@@ -305,7 +305,7 @@ class _DrawingPageState extends State<DrawingPage>
                               currentTool: drawingTool.value,
                               size: drawingTool.value == DrawingTool.eraser ? eraserSize.value : strokeSize.value,
                               strokeColor: selectedColor.value,
-                              backgroundColor: Color(0xfff2f3f7),
+                              backgroundColor: Colors.white,
                             ),
                             canvasKey: canvasGlobalKey,
                             currentStrokeListenable: currentStroke,
@@ -347,7 +347,6 @@ class _DrawingPageState extends State<DrawingPage>
 
                   },
                   onPanEnd: (details) {
-
                     if (drawingTool.value != DrawingTool.eraser && _points.isNotEmpty) {
                       String gestureName = pDollarRecognizer(_points);
                       if (gestureName == "checkmark" || gestureName == "s") {

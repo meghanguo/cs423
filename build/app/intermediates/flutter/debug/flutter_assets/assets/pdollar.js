@@ -155,7 +155,6 @@ function PDollarRecognizer() // constructor
 		var score = +Infinity;
 		for (var i = 0; i < this.PointClouds.length; i++) // for each point-cloud template
 		{
-		    console.log(this.PointClouds[i].length);
 		    var d = GreedyCloudMatch(candidate.Points, this.PointClouds[i]);
 			if (d < score) {
 			    score = d; // best (least) distance

@@ -20,7 +20,7 @@ class CurrentStrokeValueNotifier extends ValueNotifier<Stroke?> {
     value = type == StrokeType.eraser
         ? EraserStroke(
       points: [point],
-      color: const Color(0xfff2f3f7),
+      color: Colors.white,
       size: size,
       opacity: 1,
     )
