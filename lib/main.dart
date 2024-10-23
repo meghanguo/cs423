@@ -131,7 +131,7 @@ class _MyHomePageState extends State<MyHomePage> {
 
     // Call the Recognize function and pass the points array
     final result = jsRuntime.evaluate('recognizer.Recognize($pointsAsJson);');
-
+    print(result.stringResult);
     return result.stringResult;
   }
 
@@ -207,10 +207,12 @@ class _MyHomePageState extends State<MyHomePage> {
                   }
 
                   // recognize for 1 stroke plus signs
-                  String gestureName = pDollarRecognizer(_points);
-                  if (gestureName == "plus") {
-                    _points.clear();
-                    _openNewDrawingScreen();
+                  if (_points.isNotEmpty) {
+                    String gestureName = pDollarRecognizer(_points);
+                    if (gestureName == "plus" || gestureName == "s") {
+                      _points.clear();
+                      _openNewDrawingScreen();
+                    }
                   }
 
                   strokeNum += 1;

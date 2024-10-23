@@ -161,7 +161,10 @@ function PDollarRecognizer() // constructor
 			    score = d; // best (least) distance
 				u = i; // point-cloud index
 			}
+			console.log(d);
+			console.log(this.PointClouds[i]);
 		}
+		console.log(score);
         score = Math.max((2.0 - score) / 2.0, 0.0);
 		return (u == -1 || score == 0.0) ? "No match" : this.PointClouds[u].Name;
 	}
