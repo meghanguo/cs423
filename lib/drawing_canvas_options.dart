@@ -1,5 +1,7 @@
 import 'dart:ui';
 
+import 'package:flutter/material.dart';
+
 import 'drawing_tool.dart';
 
 class DrawingCanvasOptions{
@@ -14,7 +16,7 @@ class DrawingCanvasOptions{
     this.size = 10,
     this.opacity = 1,
     this.currentTool = DrawingTool.pencil,
-    this.backgroundColor = const Color(0xfff2f3f7),
+    this.backgroundColor = Colors.white,
   });
 
   DrawingCanvasOptions copyWith({
@@ -29,7 +31,7 @@ class DrawingCanvasOptions{
       size: size ?? this.size,
       opacity: opacity ?? this.opacity,
       currentTool: currentTool ?? this.currentTool,
-      backgroundColor: backgroundColor ?? this.backgroundColor,
+      backgroundColor: Colors.white,
     );
   }
 }

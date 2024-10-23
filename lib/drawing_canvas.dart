@@ -1,6 +1,5 @@
 import 'dart:math';
 import 'dart:ui' as ui;
-import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:painting_app_423/current_stroke_value_notifier.dart';
 import 'package:painting_app_423/drawing_tool.dart';
@@ -15,7 +14,6 @@ class DrawingCanvas extends StatefulWidget {
   final DrawingCanvasOptions options;
   final Function(Stroke?)? onDrawingStrokeChanged;
   final GlobalKey canvasKey;
-  final ValueNotifier<ui.Image?>? backgroundImageListenable;
   final bool canDraw;
 
   const DrawingCanvas({
@@ -25,7 +23,6 @@ class DrawingCanvas extends StatefulWidget {
     required this.options,
     this.onDrawingStrokeChanged,
     required this.canvasKey,
-    this.backgroundImageListenable,
     this.canDraw = true,
   });
 
@@ -95,8 +92,7 @@ class _DrawingCanvasState extends State<DrawingCanvas> {
           painter: _DrawingCanvasPainter(
             strokesListenable: _strokes,
             currentStrokeListenable: _currentStroke,
-            backgroundColor: widget.options.backgroundColor,
-            backgroundImageListenable: widget.backgroundImageListenable,
+            backgroundColor: Colors.white,
           ),
           child: SizedBox.expand(), // Ensure the CustomPaint fills the available space
         ),
@@ -109,31 +105,21 @@ class _DrawingCanvasPainter extends CustomPainter {
   final ValueNotifier<List<Stroke>>? strokesListenable;
   final CurrentStrokeValueNotifier? currentStrokeListenable;
   final Color backgroundColor;
-  final ValueNotifier<ui.Image?>? backgroundImageListenable;
 
   _DrawingCanvasPainter({
     this.strokesListenable,
     this.currentStrokeListenable,
     this.backgroundColor = Colors.white,
-    this.backgroundImageListenable,
   }) : super(
-    repaint: Listenable.merge([strokesListenable, currentStrokeListenable, backgroundImageListenable]),
+    repaint: Listenable.merge([strokesListenable, currentStrokeListenable]),
   );
 
   @override
   void paint(Canvas canvas, Size size) {
-    if (backgroundImageListenable != null) {
-      final backgroundImage = backgroundImageListenable!.value;
-
-      if (backgroundImage != null) {
-        canvas.drawImageRect(
-          backgroundImage,
-          Rect.fromLTWH(0, 0, backgroundImage.width.toDouble(), backgroundImage.height.toDouble()),
-          Rect.fromLTWH(0, 0, size.width, size.height),
-          Paint(),
-        );
-      }
-    }
+    canvas.drawRect(
+      Rect.fromLTWH(0, 0, size.width, size.height),
+      Paint()..color = backgroundColor,
+    );
 
     final strokes = List<Stroke>.from(strokesListenable?.value ?? []);
 
@@ -166,7 +152,7 @@ class _DrawingCanvasPainter extends CustomPainter {
         continue;
       }
 
-      if (stroke is EraserStroke) {
+      else if (stroke is EraserStroke) {
         final path = _getStrokePath(stroke, size);
         canvas.drawPath(path, paint..color = backgroundColor);
         continue;

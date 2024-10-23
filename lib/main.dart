@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'dart:core';
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart'; // For loading assets
@@ -166,32 +167,33 @@ class _MyHomePageState extends State<MyHomePage> {
       ),
       body: Stack(
         children: [
-          ListView.builder(
-              itemCount: savedDrawings.length,
-              itemBuilder: (context, index) {
-                return ListTile(
-                  title: Text(savedDrawings[index]['name']),
-                  onTap: () {
-                    // Deserialize strokes from saved data
-                    List<Stroke> strokes = (savedDrawings[index]['strokes'] as List)
-                        .map((strokeData) => Stroke.fromJson(strokeData))
-                        .toList(); // Deserialize strokes
-
-                    String drawingName = savedDrawings[index]['name'];
-
-                    Navigator.of(context).push(
-                      MaterialPageRoute(
-                        builder: (context) => SavedDrawingPage(
-                          strokes: strokes, // Pass deserialized strokes to the SavedDrawingPage
-                          drawingName: drawingName,
-                        ),
-                      ),
-                    );
-                  },
-
-                );
-              },
-            ),
+          Text("hello"),
+          // ListView.builder(
+          //     itemCount: savedDrawings.length,
+          //     itemBuilder: (context, index) {
+          //       return ListTile(
+          //         title: Text(savedDrawings[index]['name']),
+          //         onTap: () {
+          //           // Deserialize strokes from saved data
+          //           List<Stroke> strokes = (savedDrawings[index]['strokes'] as List)
+          //               .map((strokeData) => Stroke.fromJson(strokeData))
+          //               .toList(); // Deserialize strokes
+          //
+          //           String drawingName = savedDrawings[index]['name'];
+          //
+          //           Navigator.of(context).push(
+          //             MaterialPageRoute(
+          //               builder: (context) => SavedDrawingPage(
+          //                 strokes: strokes, // Pass deserialized strokes to the SavedDrawingPage
+          //                 drawingName: drawingName,
+          //               ),
+          //             ),
+          //           );
+          //         },
+          //
+          //       );
+          //     },
+          //   ),
             GestureDetector(
               onPanStart: (details) {
                   _points.add(Point(details.localPosition.dx, details.localPosition.dy, strokeNum));
@@ -206,7 +208,7 @@ class _MyHomePageState extends State<MyHomePage> {
                   // recognize for 2 stroke plus signs
                   if (!firstStroke) {
                     String gestureName = pDollarRecognizer(_points);
-                    if ((gestureName == "plus" || gestureName == 's')  & (gestureName != "line")) {
+                    if (gestureName == "plus") {
                       print("in 2 stroke");
                       print("gesture name: " + gestureName);
                       _points.clear();

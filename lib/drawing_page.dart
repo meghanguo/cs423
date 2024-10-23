@@ -84,7 +84,6 @@ class _DrawingPageState extends State<DrawingPage>
   final ValueNotifier<double> eraserSize = ValueNotifier(10.0);
   final ValueNotifier<DrawingTool> drawingTool = ValueNotifier(DrawingTool.pencil);
   final GlobalKey canvasGlobalKey = GlobalKey();
-  final ValueNotifier<ui.Image?> backgroundImage = ValueNotifier(null);
   final CurrentStrokeValueNotifier currentStroke = CurrentStrokeValueNotifier();
   final ValueNotifier<List<Stroke>> allStrokes = ValueNotifier([]);
 
@@ -92,8 +91,6 @@ class _DrawingPageState extends State<DrawingPage>
 
   List<Stroke> strokes = [];
   String recognizedGesture = '';
-  List<Offset> _currentStroke = [];
-
   Offset? _currentPointerPosition;
   late JavascriptRuntime jsRuntime;
   String jsCode = ' ';
@@ -144,7 +141,6 @@ class _DrawingPageState extends State<DrawingPage>
   // Method to show save prompt
   Future<void> showSaveDialog() async {
     final nameController = TextEditingController();
-    print(MediaQuery.of(context).size.height - 230);
 
     return showDialog<void>(
       context: context,
@@ -286,7 +282,7 @@ class _DrawingPageState extends State<DrawingPage>
           Expanded(
             child: Stack(
               children: [SizedBox(
-                  height: MediaQuery.of(context).size.height - 230,
+                  height: MediaQuery.of(context).size.height,
                   child: Stack(
                     children: [
                       AnimatedBuilder(
@@ -297,7 +293,6 @@ class _DrawingPageState extends State<DrawingPage>
                           strokeSize,
                           eraserSize,
                           drawingTool,
-                          backgroundImage,
                         ]),
                         builder: (context, _) {
                           return DrawingCanvas(
@@ -310,7 +305,6 @@ class _DrawingPageState extends State<DrawingPage>
                             canvasKey: canvasGlobalKey,
                             currentStrokeListenable: currentStroke,
                             strokesListenable: allStrokes,
-                            backgroundImageListenable: backgroundImage,
                           );
                         },
                       ),
@@ -349,7 +343,7 @@ class _DrawingPageState extends State<DrawingPage>
                   onPanEnd: (details) {
                     if (drawingTool.value != DrawingTool.eraser && _points.isNotEmpty) {
                       String gestureName = pDollarRecognizer(_points);
-                      if (gestureName == "checkmark" || gestureName == "s") {
+                      if (gestureName   == "checkmark" || gestureName == "s") {
                         print("gesture name:" + gestureName);
                         showSaveDialog();
                       }
