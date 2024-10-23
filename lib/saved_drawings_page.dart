@@ -1,50 +1,30 @@
 import 'package:flutter/material.dart';
 import 'stroke.dart'; // Your Stroke class
+import 'package:painting_app_423/drawing_page.dart';
 
 class SavedDrawingPage extends StatelessWidget {
   final List<Stroke> strokes;
   final String drawingName;
 
-  const SavedDrawingPage({Key? key, required this.strokes, required this.drawingName}) : super(key: key);
+  const SavedDrawingPage({
+    Key? key,
+    required this.strokes,
+    required this.drawingName,
+  }) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
         title: Text(drawingName),
+        backgroundColor: Theme.of(context).colorScheme.inversePrimary,
       ),
-      body: CustomPaint(
-        painter: DrawingPainter(strokes: strokes), // Pass strokes to CustomPainter
-        child: Container(),
+      body: DrawingPage(
+        onSave: (name, strokes) {
+          // Handle saving the drawing if needed
+        },
+        strokes: strokes, // Pass the saved strokes to DrawingPage
       ),
     );
-  }
-}
-
-// CustomPainter that renders strokes
-class DrawingPainter extends CustomPainter {
-  final List<Stroke> strokes;
-
-  DrawingPainter({required this.strokes});
-
-  @override
-  void paint(Canvas canvas, Size size) {
-    for (var stroke in strokes) {
-      final paint = Paint()
-        ..color = stroke.color.withOpacity(stroke.opacity) // Handle opacity
-        ..strokeWidth = stroke.size
-        ..strokeCap = StrokeCap.round;
-
-      if (stroke.points.isNotEmpty) {
-        for (int i = 0; i < stroke.points.length - 1; i++) {
-          canvas.drawLine(stroke.points[i], stroke.points[i + 1], paint);
-        }
-      }
-    }
-  }
-
-  @override
-  bool shouldRepaint(covariant CustomPainter oldDelegate) {
-    return true;
   }
 }

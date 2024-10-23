@@ -78,12 +78,24 @@ class _MyHomePageState extends State<MyHomePage> {
   }
 
   void addDrawing(String name, List<Stroke> strokes) {
-    setState(() {
-      savedDrawings.add({
-        'name': name,
-        'strokes': strokes.map((stroke) => stroke.toJson()).toList(),
+    bool exists = savedDrawings.any((drawing) => drawing['name'] == name);
+    if (!exists) {
+      setState(() {
+        savedDrawings.add({
+          'name': name,
+          'strokes': strokes.map((stroke) => stroke.toJson()).toList(),
+        });
       });
-    });
+    }
+    else {
+      savedDrawings.removeWhere((drawing) => drawing['name'] == name);
+      setState(() {
+        savedDrawings.add({
+          'name': name,
+          'strokes': strokes.map((stroke) => stroke.toJson()).toList(),
+        });
+      });
+    }
   }
 
   Future<void> _openNewDrawingScreen() async {
@@ -180,7 +192,7 @@ class _MyHomePageState extends State<MyHomePage> {
                 );
               },
             ),
-      GestureDetector(
+            GestureDetector(
               onPanStart: (details) {
                   _points.add(Point(details.localPosition.dx, details.localPosition.dy, strokeNum));
               },

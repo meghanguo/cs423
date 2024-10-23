@@ -104,7 +104,7 @@ class _DrawingPageState extends State<DrawingPage>
     animationController = AnimationController(
         vsync: this, duration: const Duration(milliseconds: 300));
     if (widget.strokes != null) {
-      strokes = widget.strokes!;
+      allStrokes.value = widget.strokes!;
     }
     loadJs();
     jsRuntime = getJavascriptRuntime();
@@ -335,51 +335,27 @@ class _DrawingPageState extends State<DrawingPage>
                     _points.clear();
                     _points.add(Point(details.localPosition.dx, details.localPosition.dy, 0));
 
-                    _currentStroke.clear(); // Clear the current stroke
-                    _currentStroke.add(details.localPosition);
                     setState(() {
                       _currentPointerPosition = details.localPosition;
                     });
                   },
                   onPanUpdate: (details) {
                     setState(() {
-                      _currentStroke.add(details.localPosition);
                       _points.add(Point(details.localPosition.dx, details.localPosition.dy, 0));
-                      _currentPointerPosition = details.localPosition;
 
                     });
 
                   },
                   onPanEnd: (details) {
-                    // Finalize the stroke when the pan ends
-                    if (_currentStroke.isNotEmpty) {
-                      // Create a new stroke
-                      final newStroke = drawingTool.value == DrawingTool.eraser
-                          ? EraserStroke(
-                        points: List.from(_currentStroke), // Copy of current stroke points
-                        size: eraserSize.value,
-                      )
-                          : NormalStroke(
-                        points: List.from(_currentStroke), // Copy of current stroke points
-                        color: selectedColor.value,
-                        size: strokeSize.value,
-                      );
 
-                      // Update the strokes in the ValueNotifier
-                      allStrokes.value = List.from(allStrokes.value)..add(newStroke);
-
-                      // Gesture recognition for non-eraser strokes
-                      if (drawingTool.value != DrawingTool.eraser && _points.isNotEmpty) {
-                        String gestureName = pDollarRecognizer(_points);
-                        if (gestureName == "checkmark" || gestureName == "s") {
-                          showSaveDialog();
-                        }
+                    if (drawingTool.value != DrawingTool.eraser && _points.isNotEmpty) {
+                      String gestureName = pDollarRecognizer(_points);
+                      if (gestureName == "checkmark" || gestureName == "s") {
+                        print("gesture name:" + gestureName);
+                        showSaveDialog();
                       }
-
-                      // Clear current stroke and pointer position
-                      _currentStroke.clear();
-                      _currentPointerPosition = null;
                     }
+                    _currentPointerPosition = null;
 
                     setState(() {
                       // Just update the state for UI to redraw
