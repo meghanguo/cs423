@@ -151,7 +151,7 @@ class _DrawingPageState extends State<DrawingPage>
       final file = File(filePath);
       await file.writeAsBytes(buffer);
 
-      final strokePath = '${directory.path}/${name}_strokes.json';
+      final strokePath = '${directory.path}/${name}.json';
       final strokesJson = jsonEncode(allStrokes.value.map((stroke) => stroke.toJson()).toList());
       await File(strokePath).writeAsString(strokesJson);
 
@@ -176,10 +176,10 @@ class _DrawingPageState extends State<DrawingPage>
   }
 
   // Method to show save prompt
-  Future<void> showSaveDialog() async {
+  Future<bool?> showSaveDialog() async {
     final nameController = TextEditingController();
 
-    return showDialog<void>(
+    return showDialog<bool>(
       context: context,
       barrierDismissible: false, // User must tap button
       builder: (BuildContext context) {
@@ -193,14 +193,14 @@ class _DrawingPageState extends State<DrawingPage>
             TextButton(
               child: const Text('Cancel'),
               onPressed: () {
-                Navigator.of(context).pop();
+                Navigator.of(context).pop(false);
               },
             ),
             TextButton(
               child: const Text('Save'),
               onPressed: () {
                 if (nameController.text.isNotEmpty) {
-                  Navigator.of(context).pop();
+                  Navigator.of(context).pop(true);
                   _saveDrawing(nameController.text);
                 }
               },
@@ -376,7 +376,7 @@ class _DrawingPageState extends State<DrawingPage>
                     });
 
                   },
-                  onPanEnd: (details) {
+                  onPanEnd: (details) async {
                     if (drawingTool.value != DrawingTool.eraser && _points.isNotEmpty) {
                       String gestureName = pDollarRecognizer(_points);
                       if (gestureName   == "checkmark" || gestureName == "s") {
@@ -387,7 +387,6 @@ class _DrawingPageState extends State<DrawingPage>
                     _currentPointerPosition = null;
 
                     setState(() {
-                      // Just update the state for UI to redraw
                     });
                   },
                 ),

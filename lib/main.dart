@@ -3,13 +3,12 @@ import 'dart:core';
 import 'dart:io';
 
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart'; // For loading assets
-import 'package:painting_app_423/drawing_page.dart'; // Your custom DrawingPage
-import 'package:painting_app_423/stroke.dart'; // Import the Stroke classes
+import 'package:flutter/services.dart';
+import 'package:painting_app_423/drawing_page.dart';
+import 'package:painting_app_423/stroke.dart';
 import 'package:flutter_js/flutter_js.dart';
-import 'package:painting_app_423/saved_drawings_page.dart';
 import 'package:path_provider/path_provider.dart';
-import 'package:win32/win32.dart';
+import 'package:path/path.dart' as p;
 
 void main() {
   runApp(const MyApp());
@@ -81,6 +80,15 @@ class _MyHomePageState extends State<MyHomePage> {
     final result = jsRuntime.evaluate('recognizer.ProcessGesturesFile(`$fileContent`);');
   }
 
+  String pDollarRecognizer(List<Point> points) {
+    String pointsAsJson = jsonEncode(points);
+
+    // Call the Recognize function and pass the points array
+    final result = jsRuntime.evaluate('recognizer.Recognize($pointsAsJson);');
+    print(result.stringResult);
+    return result.stringResult;
+  }
+
   void addDrawing(String name, List<Stroke> strokes) {
     bool exists = savedDrawings.any((drawing) => drawing['name'] == name);
     if (!exists) {
@@ -139,15 +147,6 @@ class _MyHomePageState extends State<MyHomePage> {
     }
   }
 
-  String pDollarRecognizer(List<Point> points) {
-    String pointsAsJson = jsonEncode(points);
-
-    // Call the Recognize function and pass the points array
-    final result = jsRuntime.evaluate('recognizer.Recognize($pointsAsJson);');
-    print(result.stringResult);
-    return result.stringResult;
-  }
-
   Future<void> keepLastStroke() async{
     List<Point> pointsToRemove = [];
 
@@ -179,6 +178,31 @@ class _MyHomePageState extends State<MyHomePage> {
     }
   }
 
+  Future<List<Stroke>> _loadStrokesFromFile(String path) async {
+    await showDialog(context: context,
+        builder: (BuildContext context){
+      return AlertDialog(
+        title: Text("Opening drawing"),
+        actions: <Widget>[
+          TextButton(
+            onPressed: () {
+              Navigator.of(context).pop();
+            },
+            child: const Text("OK"),
+          )
+        ],
+      );
+        });
+    String fileName = p.basenameWithoutExtension(path);
+    final drawing = File(p.join(p.dirname(path), '$fileName.json'));
+    if (await drawing.exists()) {
+      final content = await drawing.readAsString();
+      final List<dynamic> strokeJson = jsonDecode(content);
+      return strokeJson.map((json) => Stroke.fromJson(json)).toList();
+    }
+    return [];
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -192,7 +216,21 @@ class _MyHomePageState extends State<MyHomePage> {
             gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(crossAxisCount: 2, childAspectRatio: 1, crossAxisSpacing: 4, mainAxisSpacing: 4,),
             itemCount: savedDrawings.length,
             itemBuilder: (context, index) {
-              return GridTile(
+              return GestureDetector(
+                onTap: () async {
+                  List<Stroke> strokes = await _loadStrokesFromFile(savedDrawings[index]['path']);
+
+                  await Navigator.push(context,
+                    MaterialPageRoute(builder: (context) => DrawingPage(
+                      onSave: addDrawing,
+                      strokes: strokes,
+                    ),
+                    ),
+                  );
+                  _loadDrawings();
+                },
+              child:
+                GridTile(
                 child: Image.file(
                   File(savedDrawings[index]['path']),
                   fit: BoxFit.cover,
@@ -205,7 +243,7 @@ class _MyHomePageState extends State<MyHomePage> {
                     textAlign: TextAlign.center,
                   )
                 ),
-              );
+              ));
             },
           ),
             GestureDetector(
