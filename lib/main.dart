@@ -42,13 +42,6 @@ class Point {
   }
 }
 
-class Gesture {
-  final List<Point> points;
-  final String name;
-
-  Gesture(this.points, {this.name = ""});
-}
-
 class MyHomePage extends StatefulWidget {
   const MyHomePage({super.key, required this.title});
 
@@ -59,9 +52,7 @@ class MyHomePage extends StatefulWidget {
 }
 
 class _MyHomePageState extends State<MyHomePage> {
-  List<Gesture> gestureTemplates = [];
   List<Point> _points = []; // Store the drawn points
-  bool _canDraw = true; // Control to allow redrawing
   List<Map<String, dynamic>> savedDrawings = [];
   bool firstStroke = true;
   int strokeNum = 1;
@@ -83,7 +74,6 @@ class _MyHomePageState extends State<MyHomePage> {
 
     String fileContent = await rootBundle.loadString('assets/landing_page_gestures.txt');
     final result = jsRuntime.evaluate('recognizer.ProcessGesturesFile(`$fileContent`);');
-    // print('Result from JS after processing file: ${result.stringResult}');
   }
 
   void addDrawing(String name, List<Stroke> strokes) {

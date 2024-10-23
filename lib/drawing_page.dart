@@ -1,6 +1,7 @@
 import 'dart:ui' as ui;
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_js/flutter_js.dart';
 import 'package:painting_app_423/stroke.dart';
 
 import 'canvas_side_bar.dart';
@@ -16,44 +17,22 @@ import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 
 
 class Point {
-  final double x;
-  final double y;
+  final double X;
+  final double Y;
+  final int ID;
 
-  Point(this.x, this.y);
+  Point(this.X, this.Y, this.ID);
 
-  // Factory method to create a Point from JSON
-  factory Point.fromJson(Map<String, dynamic> json) {
-    return Point(json['x'], json['y']);
+  Map<String, dynamic> toJson() {
+    return {
+      'x': X,
+      'y': Y,
+      'ID': ID,
+    };
   }
-
-  // Convert Point to JSON
-  Map<String, dynamic> toJson() => {
-    'x': x,
-    'y': y,
-  };
 }
 
-// Class to represent a gesture
-class Gesture {
-  final List<Point> points;
-  final String name;
 
-  Gesture(this.points, {this.name = ""});
-
-  // Factory method to create a Gesture from JSON
-  factory Gesture.fromJson(Map<String, dynamic> json) {
-    List<Point> points = (json['points'] as List)
-        .map((p) => Point.fromJson(p))
-        .toList();
-    return Gesture(points, name: json['name']);
-  }
-
-  // Convert Gesture to JSON
-  Map<String, dynamic> toJson() => {
-    'name': name,
-    'points': points.map((p) => p.toJson()).toList(),
-  };
-}
 
 class _IconBox extends StatelessWidget {
   final IconData iconData;
@@ -109,14 +88,15 @@ class _DrawingPageState extends State<DrawingPage>
   final CurrentStrokeValueNotifier currentStroke = CurrentStrokeValueNotifier();
   final ValueNotifier<List<Stroke>> allStrokes = ValueNotifier([]);
 
-  List<Gesture> gestureTemplates = [];
-  List<Offset> _points = []; // Store the drawn points for gesture recognition
+  List<Point> _points = []; // Store the drawn points for gesture recognition
 
   List<Stroke> strokes = [];
   String recognizedGesture = '';
   List<Offset?> _currentStroke = [];
 
   Offset? _currentPointerPosition;
+  late JavascriptRuntime jsRuntime;
+  String jsCode = ' ';
 
   @override
   void initState() {
@@ -126,26 +106,33 @@ class _DrawingPageState extends State<DrawingPage>
     if (widget.strokes != null) {
       strokes = widget.strokes!;
     }
+    loadJs();
+    jsRuntime = getJavascriptRuntime();
+  }
+
+  Future<void> loadJs() async {
+    jsCode = await rootBundle.loadString('assets/pdollar.js');
+    jsRuntime.evaluate(jsCode);
+    jsRuntime.evaluate('var recognizer = new PDollarRecognizer();');
+    print('Recognizer initialized successfully');
+
+    String fileContent = await rootBundle.loadString('assets/drawing_page_gestures.txt');
+    final result = jsRuntime.evaluate('recognizer.ProcessGesturesFile(`$fileContent`);');
+  }
+
+  String pDollarRecognizer(List<Point> points) {
+    String pointsAsJson = jsonEncode(points);
+
+    // Call the Recognize function and pass the points array
+    final result = jsRuntime.evaluate('recognizer.Recognize($pointsAsJson);');
+    print(result.stringResult);
+    return result.stringResult;
   }
 
   void onPanUpdate(DragUpdateDetails details) {
-      RenderBox renderBox = context.findRenderObject() as RenderBox;
-      Offset point = renderBox.globalToLocal(details.globalPosition);
       setState(() {
-        _points.add(point);
-        _currentPointerPosition = point;
+        _points.add(Point(details.localPosition.dx, details.localPosition.dy, 0));
       });
-  }
-
-  void onPanEnd(DragEndDetails details) {
-      recognizeGesture();
-  }
-
-  void recognizeGesture() {
-    // Normalize points for recognition
-    List<Point> normalizedPoints = _points
-        .map((offset) => Point(offset.dx, offset.dy))
-        .toList();
   }
 
   void showSnackBar() {
@@ -191,182 +178,183 @@ class _DrawingPageState extends State<DrawingPage>
     );
   }
 
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: CustomScrollView(
-        slivers: [
-          SliverAppBar(
-            automaticallyImplyLeading: false,
-            backgroundColor: Theme.of(context).colorScheme.inversePrimary,
-            toolbarHeight: 100.0,  // Adjust the height based on your needs
-            floating: false,
-            pinned: true,
-            flexibleSpace: FlexibleSpaceBar(
-              background: Container(
-                padding: const EdgeInsets.fromLTRB(40.0, 10.0, 10.0, 10.0),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    const SizedBox(height: 60),  // Adjust spacing to look good inside AppBar
-                    Row(
-                      crossAxisAlignment: CrossAxisAlignment.center,
-                      children: [
-                        ColorPalette(
-                          selectedColorListenable: selectedColor,
-                        ),
-                        SizedBox(width: 15),
-                        ValueListenableBuilder<DrawingTool>(
-                          valueListenable: drawingTool,
-                          builder: (context, tool, child) {
-                            return _IconBox(
-                              iconData: FontAwesomeIcons.pencil,
-                              selected: tool == DrawingTool.pencil,
-                              onTap: () {
-                                drawingTool.value = DrawingTool.pencil;
-                                // Optionally force a rebuild for the sliders if needed
-                                setState(() {});
-                              },
-                              tooltip: 'Pencil',
-                            );
-                          },
-                        ),
-                        ValueListenableBuilder<DrawingTool>(
-                          valueListenable: drawingTool,
-                          builder: (context, tool, child) {
-                            return _IconBox(
-                              iconData: FontAwesomeIcons.eraser,
-                              selected: tool == DrawingTool.eraser,
-                              onTap: () {
-                                drawingTool.value = DrawingTool.eraser;
-                                // Optionally force a rebuild for the sliders if needed
-                                setState(() {});
-                              },
-                              tooltip: 'Eraser',
-                            );
-                          },
-                        ),
-                        Expanded(
-                          child: Padding(
-                            padding: const EdgeInsets.only(left: 20.0),
-                            child: AnimatedSwitcher(
-                              duration: Duration(milliseconds: 300),
-                              child: drawingTool.value == DrawingTool.pencil
-                                  ? Row(
-                                key: ValueKey('pencilSlider'),
-                                children: [
-                                  const Text(
-                                    'Stroke Size: ',
-                                    style: TextStyle(fontSize: 12),
-                                  ),
-                                  Expanded(
-                                    child: Slider(
-                                      value: strokeSize.value,
-                                      min: 0,
-                                      max: 50,
-                                      onChanged: (val) {
-                                        setState(() {
-                                          strokeSize.value = val;
-                                        });
-                                      },
+      body: Column(
+        children: [Container(
+          color: Theme.of(context).colorScheme.inversePrimary,
+          padding: EdgeInsets.fromLTRB(0, 0, 0, 10.0),
+          height: 120,
+          child: Row(
+                children: [
+                SizedBox(width: 10),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      mainAxisAlignment: MainAxisAlignment.end,
+                    children:[
+                      const SizedBox(height: 60),
+                      Row(
+                        crossAxisAlignment: CrossAxisAlignment.center,
+                        children: [
+                          ColorPalette(selectedColorListenable: selectedColor),
+                          SizedBox(width: 15),
+                          ValueListenableBuilder<DrawingTool>(
+                            valueListenable: drawingTool,
+                            builder: (context, tool, child) {
+                              return _IconBox(
+                                iconData: FontAwesomeIcons.pencil,
+                                selected: tool == DrawingTool.pencil,
+                                onTap: () {
+                                  drawingTool.value = DrawingTool.pencil;
+                                  // Optionally force a rebuild for the sliders if needed
+                                  setState(() {});
+                                },
+                                tooltip: 'Pencil',
+                              );
+                            },
+                          ),
+                          ValueListenableBuilder<DrawingTool>(
+                            valueListenable: drawingTool,
+                            builder: (context, tool, child) {
+                              return _IconBox(
+                                iconData: FontAwesomeIcons.eraser,
+                                selected: tool == DrawingTool.eraser,
+                                onTap: () {
+                                  drawingTool.value = DrawingTool.eraser;
+                                  // Optionally force a rebuild for the sliders if needed
+                                  setState(() {});
+                                },
+                                tooltip: 'Eraser',
+                              );
+                            },
+                          ),
+                          Expanded(
+                            child: Padding(
+                              padding: const EdgeInsets.only(left: 20.0),
+                              child: AnimatedSwitcher(
+                                duration: Duration(milliseconds: 300),
+                                child: drawingTool.value == DrawingTool.pencil
+                                    ? Row(
+                                  key: ValueKey('pencilSlider'),
+                                  children: [
+                                    const Text(
+                                      'Stroke Size: ',
+                                      style: TextStyle(fontSize: 12),
                                     ),
-                                  ),
-                                ],
-                              )
-                                  : Row(
-                                key: ValueKey('eraserSlider'),
-                                children: [
-                                  const Text(
-                                    'Eraser Size: ',
-                                    style: TextStyle(fontSize: 12),
-                                  ),
-                                  Expanded(
-                                    child: Slider(
-                                      value: eraserSize.value,
-                                      min: 0,
-                                      max: 50,
-                                      onChanged: (val) {
-                                        setState(() {
-                                          eraserSize.value = val;
-                                        });
-                                      },
+                                    Expanded(
+                                      child: Slider(
+                                        value: strokeSize.value,
+                                        min: 0,
+                                        max: 50,
+                                        onChanged: (val) {
+                                          setState(() {
+                                            strokeSize.value = val;
+                                          });
+                                        },
+                                      ),
                                     ),
-                                  ),
-                                ],
+                                  ],
+                                )
+                                    : Row(
+                                  key: ValueKey('eraserSlider'),
+                                  children: [
+                                    const Text(
+                                      'Eraser Size: ',
+                                      style: TextStyle(fontSize: 12),
+                                    ),
+                                    Expanded(
+                                      child: Slider(
+                                        value: eraserSize.value,
+                                        min: 0,
+                                        max: 50,
+                                        onChanged: (val) {
+                                          setState(() {
+                                            eraserSize.value = val;
+                                          });
+                                        },
+                                      ),
+                                    ),
+                                  ],
+                                ),
                               ),
                             ),
                           ),
+                        ],)]))]),),
+          Expanded(
+            child: Stack(
+          children: [SizedBox(
+              height: MediaQuery.of(context).size.height - 230,
+              child: Stack(
+                children: [
+                  AnimatedBuilder(
+                    animation: Listenable.merge([
+                      currentStroke,
+                      allStrokes,
+                      selectedColor,
+                      strokeSize,
+                      eraserSize,
+                      drawingTool,
+                      backgroundImage,
+                    ]),
+                    builder: (context, _) {
+                      return DrawingCanvas(
+                        options: DrawingCanvasOptions(
+                          currentTool: drawingTool.value,
+                          size: drawingTool.value == DrawingTool.eraser ? eraserSize.value : strokeSize.value,
+                          strokeColor: selectedColor.value,
+                          backgroundColor: Color(0xfff2f3f7),
                         ),
-                      ],
-                    ),
-                    const SizedBox(height: 10)
-                  ],
-                ),
-              ),
-            ),
-          ),
-          // You can add more slivers below if needed or an empty SliverFillRemaining for the rest of the body
-          SliverFillRemaining(
-            child: Center(
-              child: GestureDetector(
-                onPanUpdate: onPanUpdate,
-                onPanEnd: (details) {
-                  setState(() {
-                    _currentPointerPosition = null; // Hide the dot when finished
-                  });
-                  onPanEnd(details);
-                },
-                child: SizedBox(
-                  height: MediaQuery.of(context).size.height - 230,
-                  child: Stack(
-                    children: [
-                      AnimatedBuilder(
-                        animation: Listenable.merge([
-                          currentStroke,
-                          allStrokes,
-                          selectedColor,
-                          strokeSize,
-                          eraserSize,
-                          drawingTool,
-                          backgroundImage,
-                        ]),
-                        builder: (context, _) {
-                          return DrawingCanvas(
-                            options: DrawingCanvasOptions(
-                              currentTool: drawingTool.value,
-                              size: drawingTool.value == DrawingTool.eraser ? eraserSize.value : strokeSize.value,
-                              strokeColor: selectedColor.value,
-                              backgroundColor: Color(0xfff2f3f7),
-                            ),
-                            canvasKey: canvasGlobalKey,
-                            currentStrokeListenable: currentStroke,
-                            strokesListenable: allStrokes,
-                            backgroundImageListenable: backgroundImage,
-                          );
-                        },
-                      ),
-                      if (_currentPointerPosition != null) // Draw only if the position is set
-                        Positioned(
-                          left: _currentPointerPosition!.dx - 20, // Center the dot
-                          top: _currentPointerPosition!.dy - 20,
-                          child: Container(
-                            width: 10,
-                            height: 10,
-                            decoration: BoxDecoration(
-                              border: Border.all(color: Colors.black, width: 2), // Black hollow circle
-                              shape: BoxShape.circle,
-                            ),
-                          ),
-                        ),
-                    ],
+                        canvasKey: canvasGlobalKey,
+                        currentStrokeListenable: currentStroke,
+                        strokesListenable: allStrokes,
+                        backgroundImageListenable: backgroundImage,
+                      );
+                    },
                   ),
-                ),
+                  if (_currentPointerPosition != null) // Draw only if the position is set
+                    Positioned(
+                      left: _currentPointerPosition!.dx - 20, // Center the dot
+                      top: _currentPointerPosition!.dy - 20,
+                      child: Container(
+                        width: 10,
+                        height: 10,
+                        decoration: BoxDecoration(
+                          border: Border.all(color: Colors.black, width: 2), // Black hollow circle
+                          shape: BoxShape.circle,
+                        ),
+                      ),
+                    ),
+                ],
               ),
             ),
-          ),
-        ],
-      ),
-    );
-  }
+            GestureDetector(
+              onPanStart: (details) {
+                _points.clear();
+                _points.add(Point(details.localPosition.dx, details.localPosition.dy, 0));
+              },
+              onPanUpdate: (details) {
+                setState(() {
+                  _points.add(Point(details.localPosition.dx, details.localPosition.dy, 0));
+                });
+              },
+              onPanEnd: (details) async {
+                print("here");
+                // recognize for 1 stroke plus signs
+                if (_points.isNotEmpty) {
+                  String gestureName = pDollarRecognizer(_points);
+                  if (gestureName == "checkmark") {
+                    print("checkmark");
+                     showSaveDialog();
+                  }
+                }
+              },
+    ),
+          ]
+            )
+          )
+        ]
+    ),
+    );}
 }
