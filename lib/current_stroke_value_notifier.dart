@@ -14,32 +14,33 @@ class CurrentStrokeValueNotifier extends ValueNotifier<Stroke?> {
         double opacity = 1,
         StrokeType type = StrokeType.normal,
         int? sides,
-  }) {
-    value = () {
-      if (type == StrokeType.eraser) {
-        return EraserStroke(
-          points: [point],
-          color: const Color(0xfff2f3f7),
-          size: size,
-          opacity: 1,
-        );
-      }
+      }) {
+    if (hasStroke) return; // Prevent starting a new stroke if one is already active
 
-      return NormalStroke(
-        points: [point],
-        color: color,
-        size: size,
-        opacity: opacity,
-      );
-    }();
+    value = type == StrokeType.eraser
+        ? EraserStroke(
+      points: [point],
+      color: const Color(0xfff2f3f7),
+      size: size,
+      opacity: 1,
+    )
+        : NormalStroke(
+      points: [point],
+      color: color,
+      size: size,
+      opacity: opacity,
+    );
   }
 
   void addPoint(Offset point) {
-    final points = List<Offset>.from(value?.points ?? [])..add(point);
-    value = value?.copyWith(points: points);
+    if (value == null) return; // Avoid adding points if no stroke is active
+
+    // Clone the existing points and add the new point
+    final points = List<Offset>.from(value!.points)..add(point);
+    value = value!.copyWith(points: points); // Update the stroke with new points
   }
 
   void clear() {
-    value = null;
+    value = null; // Reset the current stroke
   }
 }

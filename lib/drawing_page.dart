@@ -4,16 +4,16 @@ import 'package:flutter/material.dart';
 import 'package:flutter_js/flutter_js.dart';
 import 'package:painting_app_423/stroke.dart';
 
-import 'canvas_side_bar.dart';
 import 'current_stroke_value_notifier.dart';
 import 'drawing_canvas.dart';
 import 'drawing_canvas_options.dart';
 import 'drawing_tool.dart';
 import 'package:flutter/services.dart'; // For loading assets
 import 'dart:convert';
-import 'dart:math' as math;
 import 'color_palette.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
+import 'package:painting_app_423/stroke.dart';
+import 'dart:math' as math;
 
 
 class Point {
@@ -92,7 +92,7 @@ class _DrawingPageState extends State<DrawingPage>
 
   List<Stroke> strokes = [];
   String recognizedGesture = '';
-  List<Offset?> _currentStroke = [];
+  List<Offset> _currentStroke = [];
 
   Offset? _currentPointerPosition;
   late JavascriptRuntime jsRuntime;
@@ -132,6 +132,7 @@ class _DrawingPageState extends State<DrawingPage>
   void onPanUpdate(DragUpdateDetails details) {
       setState(() {
         _points.add(Point(details.localPosition.dx, details.localPosition.dy, 0));
+        _currentPointerPosition = Offset(details.localPosition.dx, details.localPosition.dy);
       });
   }
 
@@ -166,7 +167,7 @@ class _DrawingPageState extends State<DrawingPage>
               child: const Text('Save'),
               onPressed: () {
                 if (nameController.text.isNotEmpty) {
-                  widget.onSave(nameController.text, strokes);
+                  widget.onSave(nameController.text, allStrokes.value);
                   Navigator.of(context).pop(); // Close dialog
                   Navigator.of(context).pop(); // Return to main page
                 }
@@ -284,77 +285,111 @@ class _DrawingPageState extends State<DrawingPage>
                         ],)]))]),),
           Expanded(
             child: Stack(
-          children: [SizedBox(
-              height: MediaQuery.of(context).size.height - 230,
-              child: Stack(
-                children: [
-                  AnimatedBuilder(
-                    animation: Listenable.merge([
-                      currentStroke,
-                      allStrokes,
-                      selectedColor,
-                      strokeSize,
-                      eraserSize,
-                      drawingTool,
-                      backgroundImage,
-                    ]),
-                    builder: (context, _) {
-                      return DrawingCanvas(
-                        options: DrawingCanvasOptions(
-                          currentTool: drawingTool.value,
-                          size: drawingTool.value == DrawingTool.eraser ? eraserSize.value : strokeSize.value,
-                          strokeColor: selectedColor.value,
-                          backgroundColor: Color(0xfff2f3f7),
-                        ),
-                        canvasKey: canvasGlobalKey,
-                        currentStrokeListenable: currentStroke,
-                        strokesListenable: allStrokes,
-                        backgroundImageListenable: backgroundImage,
-                      );
-                    },
-                  ),
-                  if (_currentPointerPosition != null) // Draw only if the position is set
-                    Positioned(
-                      left: _currentPointerPosition!.dx - 20, // Center the dot
-                      top: _currentPointerPosition!.dy - 20,
-                      child: Container(
-                        width: 10,
-                        height: 10,
-                        decoration: BoxDecoration(
-                          border: Border.all(color: Colors.black, width: 2), // Black hollow circle
-                          shape: BoxShape.circle,
-                        ),
+              children: [SizedBox(
+                  height: MediaQuery.of(context).size.height - 230,
+                  child: Stack(
+                    children: [
+                      AnimatedBuilder(
+                        animation: Listenable.merge([
+                          currentStroke,
+                          allStrokes,
+                          selectedColor,
+                          strokeSize,
+                          eraserSize,
+                          drawingTool,
+                          backgroundImage,
+                        ]),
+                        builder: (context, _) {
+                          return DrawingCanvas(
+                            options: DrawingCanvasOptions(
+                              currentTool: drawingTool.value,
+                              size: drawingTool.value == DrawingTool.eraser ? eraserSize.value : strokeSize.value,
+                              strokeColor: selectedColor.value,
+                              backgroundColor: Color(0xfff2f3f7),
+                            ),
+                            canvasKey: canvasGlobalKey,
+                            currentStrokeListenable: currentStroke,
+                            strokesListenable: allStrokes,
+                            backgroundImageListenable: backgroundImage,
+                          );
+                        },
                       ),
-                    ),
-                ],
-              ),
-            ),
-            GestureDetector(
-              onPanStart: (details) {
-                _points.clear();
-                _points.add(Point(details.localPosition.dx, details.localPosition.dy, 0));
-              },
-              onPanUpdate: (details) {
-                setState(() {
-                  _points.add(Point(details.localPosition.dx, details.localPosition.dy, 0));
-                });
-              },
-              onPanEnd: (details) async {
-                print("here");
-                // recognize for 1 stroke plus signs
-                if (_points.isNotEmpty) {
-                  String gestureName = pDollarRecognizer(_points);
-                  if (gestureName == "checkmark") {
-                    print("checkmark");
-                     showSaveDialog();
-                  }
-                }
-              },
-    ),
-          ]
+                      if (_currentPointerPosition != null) // Draw only if the position is set
+                        Positioned(
+                          left: _currentPointerPosition!.dx - 17, // Center the dot
+                          top: _currentPointerPosition!.dy - 17,
+                          child: Container(
+                            width: 10,
+                            height: 10,
+                            decoration: BoxDecoration(
+                              border: Border.all(color: Colors.black, width: 2), // Black hollow circle
+                              shape: BoxShape.circle,
+                            ),
+                          ),
+                        ),
+                    ],
+                  ),
+                ),
+                GestureDetector(
+                  onPanStart: (details) {
+                    _points.clear();
+                    _points.add(Point(details.localPosition.dx, details.localPosition.dy, 0));
+
+                    _currentStroke.clear(); // Clear the current stroke
+                    _currentStroke.add(details.localPosition);
+                    setState(() {
+                      _currentPointerPosition = details.localPosition;
+                    });
+                  },
+                  onPanUpdate: (details) {
+                    setState(() {
+                      _currentStroke.add(details.localPosition);
+                      _points.add(Point(details.localPosition.dx, details.localPosition.dy, 0));
+                      _currentPointerPosition = details.localPosition;
+
+                    });
+
+                  },
+                  onPanEnd: (details) {
+                    // Finalize the stroke when the pan ends
+                    if (_currentStroke.isNotEmpty) {
+                      // Create a new stroke
+                      final newStroke = drawingTool.value == DrawingTool.eraser
+                          ? EraserStroke(
+                        points: List.from(_currentStroke), // Copy of current stroke points
+                        size: eraserSize.value,
+                      )
+                          : NormalStroke(
+                        points: List.from(_currentStroke), // Copy of current stroke points
+                        color: selectedColor.value,
+                        size: strokeSize.value,
+                      );
+
+                      // Update the strokes in the ValueNotifier
+                      allStrokes.value = List.from(allStrokes.value)..add(newStroke);
+
+                      // Gesture recognition for non-eraser strokes
+                      if (drawingTool.value != DrawingTool.eraser && _points.isNotEmpty) {
+                        String gestureName = pDollarRecognizer(_points);
+                        if (gestureName == "checkmark" || gestureName == "s") {
+                          showSaveDialog();
+                        }
+                      }
+
+                      // Clear current stroke and pointer position
+                      _currentStroke.clear();
+                      _currentPointerPosition = null;
+                    }
+
+                    setState(() {
+                      // Just update the state for UI to redraw
+                    });
+                  },
+                ),
+              ]
             )
           )
         ]
-    ),
+      ),
     );}
 }

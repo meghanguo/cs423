@@ -14,7 +14,7 @@ class DrawingCanvasOptions{
     this.size = 10,
     this.opacity = 1,
     this.currentTool = DrawingTool.pencil,
-    this.backgroundColor = const Color(0xffE9FAFF),
+    this.backgroundColor = const Color(0xfff2f3f7),
   });
 
   DrawingCanvasOptions copyWith({

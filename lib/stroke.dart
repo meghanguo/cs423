@@ -24,6 +24,44 @@ abstract class Stroke {
 
   bool get isEraser => strokeType == StrokeType.eraser;
   bool get isNormal => strokeType == StrokeType.normal;
+
+  Map<String, dynamic> toJson() {
+    return {
+      'color': color.value, // Save color as an integer (ARGB value)
+      'size': size,
+      'opacity': opacity,
+      'points': points.map((p) => {'x': p.dx, 'y': p.dy}).toList(),
+      'strokeType': strokeType.toString(), // Save strokeType as a string
+    };
+  }
+
+  // Factory to deserialize Stroke based on strokeType
+  factory Stroke.fromJson(Map<String, dynamic> json) {
+    List<Offset> points = (json['points'] as List)
+        .map((point) => Offset(point['x'], point['y']))
+        .toList();
+    Color color = Color(json['color']);
+    double size = json['size'];
+    double opacity = json['opacity'];
+    StrokeType strokeType = StrokeType.fromString(json['strokeType']);
+
+    // Create a NormalStroke or EraserStroke based on strokeType
+    if (strokeType == StrokeType.eraser) {
+      return EraserStroke(
+        points: points,
+        color: color,
+        size: size,
+        opacity: opacity,
+      );
+    } else {
+      return NormalStroke(
+        points: points,
+        color: color,
+        size: size,
+        opacity: opacity,
+      );
+    }
+  }
 }
 
 class EraserStroke extends Stroke {

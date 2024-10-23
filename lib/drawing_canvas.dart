@@ -1,6 +1,5 @@
 import 'dart:math';
 import 'dart:ui' as ui;
-
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:painting_app_423/current_stroke_value_notifier.dart';
@@ -10,7 +9,7 @@ import 'package:painting_app_423/offset_extension.dart';
 import 'package:painting_app_423/stroke.dart';
 import 'drawing_canvas_options.dart';
 
-class DrawingCanvas extends StatefulWidget{
+class DrawingCanvas extends StatefulWidget {
   final ValueNotifier<List<Stroke>> strokesListenable;
   final CurrentStrokeValueNotifier currentStrokeListenable;
   final DrawingCanvasOptions options;
@@ -34,7 +33,7 @@ class DrawingCanvas extends StatefulWidget{
   State<StatefulWidget> createState() => _DrawingCanvasState();
 }
 
-class _DrawingCanvasState extends State<DrawingCanvas>{
+class _DrawingCanvasState extends State<DrawingCanvas> {
   Color get strokeColor => widget.options.strokeColor;
   double get size => widget.options.size;
   double get opacity => widget.options.opacity;
@@ -43,8 +42,7 @@ class _DrawingCanvasState extends State<DrawingCanvas>{
   CurrentStrokeValueNotifier get _currentStroke => widget.currentStrokeListenable;
 
   void _onPointerDown(PointerDownEvent event) {
-
-    if(!widget.canDraw) return;
+    if (!widget.canDraw) return;
 
     final box = context.findRenderObject() as RenderBox?;
     if (box == null) return;
@@ -58,6 +56,7 @@ class _DrawingCanvasState extends State<DrawingCanvas>{
       opacity: opacity,
       type: currentTool.strokeType,
     );
+    print('Pointer Down: ${standardOffset}');
     widget.onDrawingStrokeChanged?.call(_currentStroke.value);
   }
 
@@ -69,15 +68,17 @@ class _DrawingCanvasState extends State<DrawingCanvas>{
 
     final standardOffset = offset.scaleToStandard(box.size);
     _currentStroke.addPoint(standardOffset);
+    print('Pointer Move: ${standardOffset}');
     widget.onDrawingStrokeChanged?.call(_currentStroke.value);
   }
+
 
   void _onPointerUp(PointerUpEvent event) {
     if (!widget.canDraw) return;
 
     if (!_currentStroke.hasStroke) return;
-    _strokes.value = List<Stroke>.from(_strokes.value)
-      ..add(_currentStroke.value!);
+    _strokes.value = List<Stroke>.from(_strokes.value)..add(_currentStroke.value!);
+    print('Pointer Up: Added stroke with ${_currentStroke.value}');
     _currentStroke.clear();
     widget.onDrawingStrokeChanged?.call(null);
   }
@@ -88,32 +89,17 @@ class _DrawingCanvasState extends State<DrawingCanvas>{
       onPointerUp: _onPointerUp,
       onPointerMove: _onPointerMove,
       onPointerDown: _onPointerDown,
-      child: Stack(
-        children: [
-          Positioned.fill(
-            child: RepaintBoundary(
-              key: widget.canvasKey,
-              child: CustomPaint(
-                isComplex: true,
-                painter: _DrawingCanvasPainter(
-                  strokesListenable: _strokes,
-                  backgroundColor: widget.options.backgroundColor,
-                )
-              ),
-            ),
+      child: RepaintBoundary(
+        key: widget.canvasKey,
+        child: CustomPaint(
+          painter: _DrawingCanvasPainter(
+            strokesListenable: _strokes,
+            currentStrokeListenable: _currentStroke,
+            backgroundColor: widget.options.backgroundColor,
+            backgroundImageListenable: widget.backgroundImageListenable,
           ),
-
-          Positioned.fill(child: RepaintBoundary(
-              child: CustomPaint(
-                isComplex: true,
-                painter: _DrawingCanvasPainter(
-                  strokeListenable: _currentStroke,
-                  backgroundColor: widget.options.backgroundColor,
-                  backgroundImageListenable: widget.backgroundImageListenable,
-                )
-              )
-            ))
-        ],
+          child: SizedBox.expand(), // Ensure the CustomPaint fills the available space
+        ),
       ),
     );
   }
@@ -121,17 +107,17 @@ class _DrawingCanvasState extends State<DrawingCanvas>{
 
 class _DrawingCanvasPainter extends CustomPainter {
   final ValueNotifier<List<Stroke>>? strokesListenable;
-  final CurrentStrokeValueNotifier? strokeListenable;
+  final CurrentStrokeValueNotifier? currentStrokeListenable;
   final Color backgroundColor;
   final ValueNotifier<ui.Image?>? backgroundImageListenable;
 
   _DrawingCanvasPainter({
     this.strokesListenable,
-    this.strokeListenable,
+    this.currentStrokeListenable,
     this.backgroundColor = Colors.white,
     this.backgroundImageListenable,
   }) : super(
-    repaint: Listenable.merge([strokesListenable, strokeListenable, backgroundImageListenable]),
+    repaint: Listenable.merge([strokesListenable, currentStrokeListenable, backgroundImageListenable]),
   );
 
   @override
@@ -140,13 +126,19 @@ class _DrawingCanvasPainter extends CustomPainter {
       final backgroundImage = backgroundImageListenable!.value;
 
       if (backgroundImage != null) {
-        canvas.drawImageRect(backgroundImage, Rect.fromLTWH(0, 0, backgroundImage.width.toDouble(), backgroundImage.height.toDouble(),), Rect.fromLTWH(0, 0, size.width, size.height), Paint(),);
+        canvas.drawImageRect(
+          backgroundImage,
+          Rect.fromLTWH(0, 0, backgroundImage.width.toDouble(), backgroundImage.height.toDouble()),
+          Rect.fromLTWH(0, 0, size.width, size.height),
+          Paint(),
+        );
       }
     }
+
     final strokes = List<Stroke>.from(strokesListenable?.value ?? []);
 
-    if (strokeListenable?.hasStroke ?? false) {
-      strokes.add(strokeListenable!.value!);
+    if (currentStrokeListenable?.hasStroke ?? false) {
+      strokes.add(currentStrokeListenable!.value!);
     }
 
     for (final stroke in strokes) {
@@ -155,11 +147,11 @@ class _DrawingCanvasPainter extends CustomPainter {
 
       final strokeSize = max(stroke.size, 1.0);
       final paint = Paint()
-      ..color = stroke.color.withOpacity(stroke.opacity)
-      ..strokeWidth = strokeSize
-      ..strokeCap = StrokeCap.round
-      ..strokeJoin = StrokeJoin.round
-      ..style = PaintingStyle.stroke;
+        ..color = stroke.color.withOpacity(stroke.opacity)
+        ..strokeWidth = strokeSize
+        ..strokeCap = StrokeCap.round
+        ..strokeJoin = StrokeJoin.round
+        ..style = PaintingStyle.stroke;
 
       if (stroke is NormalStroke) {
         final path = _getStrokePath(stroke, size);
@@ -192,7 +184,7 @@ class _DrawingCanvasPainter extends CustomPainter {
         final p0 = points[i].scaleFromStandard(size);
         final p1 = points[i + 1].scaleFromStandard(size);
 
-        // use quadratic bezier to draw smooth curves through the points
+        // Use quadratic bezier to draw smooth curves through the points
         path.quadraticBezierTo(
           p0.dx,
           p0.dy,
@@ -205,5 +197,5 @@ class _DrawingCanvasPainter extends CustomPainter {
   }
 
   @override
-  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
+  bool shouldRepaint(covariant CustomPainter oldDelegate) => true; // Always repaint
 }

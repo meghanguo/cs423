@@ -5,6 +5,7 @@ import 'package:flutter/services.dart'; // For loading assets
 import 'package:painting_app_423/drawing_page.dart'; // Your custom DrawingPage
 import 'package:painting_app_423/stroke.dart'; // Import the Stroke classes
 import 'package:flutter_js/flutter_js.dart';
+import 'package:painting_app_423/saved_drawings_page.dart';
 import 'package:win32/win32.dart';
 
 void main() {
@@ -80,7 +81,7 @@ class _MyHomePageState extends State<MyHomePage> {
     setState(() {
       savedDrawings.add({
         'name': name,
-        'strokes': strokes,
+        'strokes': strokes.map((stroke) => stroke.toJson()).toList(),
       });
     });
   }
@@ -110,9 +111,14 @@ class _MyHomePageState extends State<MyHomePage> {
     );
 
     if (confirmNewDrawing == true) {
-      final result = await Navigator.of(context).push(
-        MaterialPageRoute(builder: (context) => DrawingPage(onSave: addDrawing)),
-      );
+      Navigator.of(context).push(
+        MaterialPageRoute(
+          builder: (context) => DrawingPage(
+            onSave: addDrawing,  // This function saves the strokes
+            strokes: [], // Or pass existing strokes if editing
+          ),
+        ),
+      );;
     }
   }
 
@@ -148,26 +154,32 @@ class _MyHomePageState extends State<MyHomePage> {
       ),
       body: Stack(
         children: [
-          // ListView.builder(
-          //     itemCount: savedDrawings.length,
-          //     itemBuilder: (context, index) {
-          //       return ListTile(
-          //         title: Text(savedDrawings[index]['name']),
-          //         onTap: () {
-          //           List<Stroke> strokes = savedDrawings[index]['strokes'];
-          //           String drawingName = savedDrawings[index]['name'];
-          //           Navigator.of(context).push(
-          //             MaterialPageRoute(
-          //               builder: (context) => DrawingPage(
-          //                 onSave: addDrawing,
-          //                 strokes: strokes, // Pass saved strokes to the DrawingPage
-          //               ),
-          //             ),
-          //           );
-          //         },
-          //       );
-          //     },
-          //   ),
+          ListView.builder(
+              itemCount: savedDrawings.length,
+              itemBuilder: (context, index) {
+                return ListTile(
+                  title: Text(savedDrawings[index]['name']),
+                  onTap: () {
+                    // Deserialize strokes from saved data
+                    List<Stroke> strokes = (savedDrawings[index]['strokes'] as List)
+                        .map((strokeData) => Stroke.fromJson(strokeData))
+                        .toList(); // Deserialize strokes
+
+                    String drawingName = savedDrawings[index]['name'];
+
+                    Navigator.of(context).push(
+                      MaterialPageRoute(
+                        builder: (context) => SavedDrawingPage(
+                          strokes: strokes, // Pass deserialized strokes to the SavedDrawingPage
+                          drawingName: drawingName,
+                        ),
+                      ),
+                    );
+                  },
+
+                );
+              },
+            ),
       GestureDetector(
               onPanStart: (details) {
                   _points.add(Point(details.localPosition.dx, details.localPosition.dy, strokeNum));
@@ -182,7 +194,9 @@ class _MyHomePageState extends State<MyHomePage> {
                   // recognize for 2 stroke plus signs
                   if (!firstStroke) {
                     String gestureName = pDollarRecognizer(_points);
-                    if (gestureName == "plus") {
+                    if ((gestureName == "plus" || gestureName == 's')  & (gestureName != "line")) {
+                      print("in 2 stroke");
+                      print("gesture name: " + gestureName);
                       _points.clear();
                       _openNewDrawingScreen();
                     }
@@ -194,7 +208,9 @@ class _MyHomePageState extends State<MyHomePage> {
                   // recognize for 1 stroke plus signs
                   if (_points.isNotEmpty) {
                     String gestureName = pDollarRecognizer(_points);
-                    if (gestureName == "plus" || gestureName == "s") {
+                    if ( (gestureName == "plus" || gestureName == "s") & (gestureName != "line")) {
+                      print("in one stroke");
+                      print("gesture name: " + gestureName);
                       _points.clear();
                       _openNewDrawingScreen();
                     }

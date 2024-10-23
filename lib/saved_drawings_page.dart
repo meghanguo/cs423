@@ -14,14 +14,14 @@ class SavedDrawingPage extends StatelessWidget {
         title: Text(drawingName),
       ),
       body: CustomPaint(
-        painter: DrawingPainter(strokes: strokes),
+        painter: DrawingPainter(strokes: strokes), // Pass strokes to CustomPainter
         child: Container(),
       ),
     );
   }
 }
 
-// This is a CustomPainter that takes strokes and draws them.
+// CustomPainter that renders strokes
 class DrawingPainter extends CustomPainter {
   final List<Stroke> strokes;
 
@@ -31,7 +31,7 @@ class DrawingPainter extends CustomPainter {
   void paint(Canvas canvas, Size size) {
     for (var stroke in strokes) {
       final paint = Paint()
-        ..color = stroke.color
+        ..color = stroke.color.withOpacity(stroke.opacity) // Handle opacity
         ..strokeWidth = stroke.size
         ..strokeCap = StrokeCap.round;
 
