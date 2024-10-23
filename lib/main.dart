@@ -127,14 +127,15 @@ class _MyHomePageState extends State<MyHomePage> {
     );
 
     if (confirmNewDrawing == true) {
-      Navigator.of(context).push(
+      await Navigator.push(context,
         MaterialPageRoute(
           builder: (context) => DrawingPage(
             onSave: addDrawing,  // This function saves the strokes
             strokes: [], // Or pass existing strokes if editing
           ),
         ),
-      );;
+      );
+      _loadDrawings();
     }
   }
 
