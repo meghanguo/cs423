@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'dart:core';
+import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart'; // For loading assets
@@ -7,6 +8,7 @@ import 'package:painting_app_423/drawing_page.dart'; // Your custom DrawingPage
 import 'package:painting_app_423/stroke.dart'; // Import the Stroke classes
 import 'package:flutter_js/flutter_js.dart';
 import 'package:painting_app_423/saved_drawings_page.dart';
+import 'package:path_provider/path_provider.dart';
 import 'package:win32/win32.dart';
 
 void main() {
@@ -67,6 +69,7 @@ class _MyHomePageState extends State<MyHomePage> {
     super.initState();
     loadJs();
     jsRuntime = getJavascriptRuntime();
+    _loadDrawings();
   }
 
   Future<void> loadJs() async {
@@ -158,6 +161,23 @@ class _MyHomePageState extends State<MyHomePage> {
     });
   }
 
+  Future<void> _loadDrawings() async {
+    final directory = await getApplicationDocumentsDirectory();
+    final drawings = await directory.list().toList();
+
+    List<Map<String, dynamic>> loadedDrawings = [];
+
+    for (var drawing in drawings) {
+      if (drawing is File && (drawing.path.endsWith('png'))) {
+        loadedDrawings.add({
+          'name': drawing.uri.pathSegments.last,
+          'path': drawing.path,
+        });
+      }
+      setState(() {savedDrawings = loadedDrawings;});
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -167,33 +187,26 @@ class _MyHomePageState extends State<MyHomePage> {
       ),
       body: Stack(
         children: [
-          Text("hello"),
-          // ListView.builder(
-          //     itemCount: savedDrawings.length,
-          //     itemBuilder: (context, index) {
-          //       return ListTile(
-          //         title: Text(savedDrawings[index]['name']),
-          //         onTap: () {
-          //           // Deserialize strokes from saved data
-          //           List<Stroke> strokes = (savedDrawings[index]['strokes'] as List)
-          //               .map((strokeData) => Stroke.fromJson(strokeData))
-          //               .toList(); // Deserialize strokes
-          //
-          //           String drawingName = savedDrawings[index]['name'];
-          //
-          //           Navigator.of(context).push(
-          //             MaterialPageRoute(
-          //               builder: (context) => SavedDrawingPage(
-          //                 strokes: strokes, // Pass deserialized strokes to the SavedDrawingPage
-          //                 drawingName: drawingName,
-          //               ),
-          //             ),
-          //           );
-          //         },
-          //
-          //       );
-          //     },
-          //   ),
+          GridView.builder(
+            gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(crossAxisCount: 2, childAspectRatio: 1, crossAxisSpacing: 4, mainAxisSpacing: 4,),
+            itemCount: savedDrawings.length,
+            itemBuilder: (context, index) {
+              return GridTile(
+                child: Image.file(
+                  File(savedDrawings[index]['path']),
+                  fit: BoxFit.cover,
+                ),
+                footer: GridTileBar(
+                  backgroundColor: Colors.white,
+                  title: Text(
+                    savedDrawings[index]['name'],
+                    style: TextStyle(color: Colors.black),
+                    textAlign: TextAlign.center,
+                  )
+                ),
+              );
+            },
+          ),
             GestureDetector(
               onPanStart: (details) {
                   _points.add(Point(details.localPosition.dx, details.localPosition.dy, strokeNum));

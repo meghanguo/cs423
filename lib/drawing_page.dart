@@ -1,6 +1,8 @@
+import 'dart:io';
 import 'dart:ui' as ui;
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/rendering.dart';
 import 'package:flutter_js/flutter_js.dart';
 import 'package:painting_app_423/stroke.dart';
 
@@ -12,8 +14,7 @@ import 'package:flutter/services.dart'; // For loading assets
 import 'dart:convert';
 import 'color_palette.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
-import 'package:painting_app_423/stroke.dart';
-import 'dart:math' as math;
+import 'package:path_provider/path_provider.dart';
 
 
 class Point {
@@ -31,8 +32,6 @@ class Point {
     };
   }
 }
-
-
 
 class _IconBox extends StatelessWidget {
   final IconData iconData;
@@ -95,6 +94,7 @@ class _DrawingPageState extends State<DrawingPage>
   late JavascriptRuntime jsRuntime;
   String jsCode = ' ';
 
+
   @override
   void initState() {
     super.initState();
@@ -138,6 +138,43 @@ class _DrawingPageState extends State<DrawingPage>
     ScaffoldMessenger.of(context).showSnackBar(snackBar);
   }
 
+  List<String> savedDrawingPaths = [];
+
+  Future<void> _saveDrawing(name) async {
+      RenderRepaintBoundary boundary = canvasGlobalKey.currentContext!.findRenderObject() as RenderRepaintBoundary;
+      ui.Image image = await boundary.toImage(pixelRatio: 3.0);
+
+      final byteData = await image.toByteData(format: ui.ImageByteFormat.png);
+      final buffer = byteData!.buffer.asUint8List();
+      final directory = await getApplicationDocumentsDirectory();
+      final filePath = '${directory.path}/${name}.png';
+      final file = File(filePath);
+      await file.writeAsBytes(buffer);
+
+      final strokePath = '${directory.path}/${name}_strokes.json';
+      final strokesJson = jsonEncode(allStrokes.value.map((stroke) => stroke.toJson()).toList());
+      await File(strokePath).writeAsString(strokesJson);
+
+      return showDialog<void>(
+          context: context,
+          barrierDismissible: true, // User must tap button
+          builder: (BuildContext context) {
+            return AlertDialog(
+                title: const Text('Drawing Saved'),
+                content: const Text('Your drawing has been successfully saved.'),
+              actions: <Widget>[
+                TextButton(
+                  onPressed: () {
+                    Navigator.of(context).pop(); // Close the dialog
+                    Navigator.of(context).pop(); // Return to main page
+                  },
+                  child: const Text('OK'),
+                ),
+              ],
+            );}
+      );
+  }
+
   // Method to show save prompt
   Future<void> showSaveDialog() async {
     final nameController = TextEditingController();
@@ -163,9 +200,8 @@ class _DrawingPageState extends State<DrawingPage>
               child: const Text('Save'),
               onPressed: () {
                 if (nameController.text.isNotEmpty) {
-                  widget.onSave(nameController.text, allStrokes.value);
-                  Navigator.of(context).pop(); // Close dialog
-                  Navigator.of(context).pop(); // Return to main page
+                  Navigator.of(context).pop();
+                  _saveDrawing(nameController.text);
                 }
               },
             ),
