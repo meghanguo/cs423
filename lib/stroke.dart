@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 
 abstract class Stroke {
-  final List<Offset> points;
+  List<Offset> points;
   final Color color;
   final double size;
   final double opacity;

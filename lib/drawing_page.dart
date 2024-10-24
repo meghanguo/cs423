@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'dart:math';
 import 'dart:ui' as ui;
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
@@ -15,7 +16,6 @@ import 'dart:convert';
 import 'color_palette.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:path_provider/path_provider.dart';
-
 
 class Point {
   final double X;
@@ -70,7 +70,11 @@ class DrawingPage extends StatefulWidget {
   final List<Stroke>? strokes; // Accept saved strokes
   final String? existingDrawingName;
 
-  const DrawingPage({super.key, required this.onSave, this.strokes, this.existingDrawingName});
+  const DrawingPage(
+      {super.key,
+      required this.onSave,
+      this.strokes,
+      this.existingDrawingName});
 
   @override
   _DrawingPageState createState() => _DrawingPageState();
@@ -82,7 +86,8 @@ class _DrawingPageState extends State<DrawingPage>
   final ValueNotifier<Color> selectedColor = ValueNotifier(Colors.black);
   final ValueNotifier<double> strokeSize = ValueNotifier(10.0);
   final ValueNotifier<double> eraserSize = ValueNotifier(10.0);
-  final ValueNotifier<DrawingTool> drawingTool = ValueNotifier(DrawingTool.pencil);
+  final ValueNotifier<DrawingTool> drawingTool =
+      ValueNotifier(DrawingTool.pencil);
   final GlobalKey canvasGlobalKey = GlobalKey();
   final CurrentStrokeValueNotifier currentStroke = CurrentStrokeValueNotifier();
   final ValueNotifier<List<Stroke>> allStrokes = ValueNotifier([]);
@@ -111,10 +116,18 @@ class _DrawingPageState extends State<DrawingPage>
     jsCode = await rootBundle.loadString('assets/pdollar.js');
     jsRuntime.evaluate(jsCode);
     jsRuntime.evaluate('var recognizer = new PDollarRecognizer();');
-    print('Recognizer initialized successfully');
+    String fileContent =
+        await rootBundle.loadString('assets/drawing_page_gestures.txt');
+    final result =
+        jsRuntime.evaluate('recognizer.ProcessGesturesFile(`$fileContent`);');
 
-    String fileContent = await rootBundle.loadString('assets/drawing_page_gestures.txt');
-    final result = jsRuntime.evaluate('recognizer.ProcessGesturesFile(`$fileContent`);');
+    jsRuntime.evaluate('var shapeRecognizer = new PDollarRecognizer();');
+    String shapeFileContent =
+        await rootBundle.loadString('assets/drawing_shapes.txt');
+    final shapeResult = jsRuntime
+        .evaluate('shapeRecognizer.ProcessGesturesFile(`$shapeFileContent`);');
+
+    print('Recognizers initialized successfully');
   }
 
   String pDollarRecognizer(List<Point> points) {
@@ -125,36 +138,100 @@ class _DrawingPageState extends State<DrawingPage>
     return result.stringResult;
   }
 
+  String shapeRecognizer(List<Point> points) {
+    String pointsAsJson = jsonEncode(points);
+
+    // Call the Recognize function and pass the points array
+    final result =
+        jsRuntime.evaluate('shapeRecognizer.Recognize($pointsAsJson);');
+    return result.stringResult;
+  }
+
   void onPanUpdate(DragUpdateDetails details) {
-      setState(() {
-        _points.add(Point(details.localPosition.dx, details.localPosition.dy, 0));
-        _currentPointerPosition = Offset(details.localPosition.dx, details.localPosition.dy);
-      });
+    setState(() {
+      _points.add(Point(details.localPosition.dx, details.localPosition.dy, 0));
+      _currentPointerPosition =
+          Offset(details.localPosition.dx, details.localPosition.dy);
+    });
+  }
+
+  Offset calculateCenter(List<Point> points) {
+    double sumX = 0.0;
+    double sumY = 0.0;
+
+    for (var point in points) {
+      sumX += point.X;
+      sumY += point.Y;
+    }
+
+    return Offset(sumX / points.length, sumY / points.length);
+  }
+
+  double calculateAverageRadius(List<Point> points, Offset center) {
+    double sumRad = 0.0;
+
+    for (var point in points) {
+      double dx = point.X - center.dx;
+      double dy = point.Y - center.dy;
+      double radius = sqrt(dx * dx + dy * dy);
+      sumRad += radius;
+    }
+
+    return sumRad / points.length;
+  }
+
+  List<Offset> generatePerfectCircle(
+      Offset center, double radius, int numPoints) {
+    List<Offset> circlePoints = [];
+    double angle = (2 * pi) / numPoints;
+    for (int i = 0; i < numPoints; i++) {
+      double currAngle = i * angle;
+      double x = center.dx + radius * cos(currAngle);
+      double y = center.dy + radius * sin(currAngle);
+      circlePoints.add(Offset(x, y));
+    }
+
+    return circlePoints;
   }
 
   List<String> savedDrawingPaths = [];
 
   Future<void> _saveDrawing([String? name]) async {
-    String drawingName = widget.existingDrawingName?.replaceAll(".png", "") ?? '';
+    String drawingName =
+        widget.existingDrawingName?.replaceAll(".png", "") ?? '';
     final temp = allStrokes.value.last;
     allStrokes.value.removeLast();
 
     if (drawingName.isEmpty) {
       final nameController = TextEditingController();
-      final name = await showDialog<String>(context: context,
+      final name = await showDialog<String>(
+          context: context,
           barrierDismissible: false,
           builder: (BuildContext context) {
-        return AlertDialog(
-          title: Text("Save Drawing"),
-          content: TextField(
-            controller: nameController,
-            decoration: const InputDecoration(hintText: 'Enter drawing name'),
-          ),
-          actions: <Widget>[
-            TextButton(onPressed:() {Navigator.of(context).pop(null);}, child: const Text('Cancel')),
-            TextButton(onPressed:() {if(nameController.text.isNotEmpty) {Navigator.of(context).pop(nameController.text);};}, child: const Text("Save"),
-            )],
-        );
+            return AlertDialog(
+              title: Text("Save Drawing"),
+              content: TextField(
+                controller: nameController,
+                decoration:
+                    const InputDecoration(hintText: 'Enter drawing name'),
+              ),
+              actions: <Widget>[
+                TextButton(
+                    onPressed: () {
+                      Navigator.of(context).pop(null);
+                    },
+                    child: const Text('Cancel')),
+                TextButton(
+                  onPressed: () {
+                    if (nameController.text.isNotEmpty) {
+                      Navigator.of(context).pop(nameController.text);
+                    }
+                    ;
+                  },
+                  child: const Text("Save"),
+                )
+              ],
+            );
           });
 
       if (name != null) {
@@ -164,16 +241,26 @@ class _DrawingPageState extends State<DrawingPage>
         return;
       }
     } else {
-      final result = await showDialog<bool>(context: context,
+      final result = await showDialog<bool>(
+          context: context,
           barrierDismissible: false,
           builder: (BuildContext context) {
             return AlertDialog(
               title: Text("Save Drawing"),
               content: Text('Save current drawing as "$drawingName"'),
               actions: <Widget>[
-                TextButton(onPressed:() {Navigator.of(context).pop(false);}, child: const Text('Cancel')),
-                TextButton(onPressed:() {Navigator.of(context).pop(true);}, child: const Text("Save"),
-                )],
+                TextButton(
+                    onPressed: () {
+                      Navigator.of(context).pop(false);
+                    },
+                    child: const Text('Cancel')),
+                TextButton(
+                  onPressed: () {
+                    Navigator.of(context).pop(true);
+                  },
+                  child: const Text("Save"),
+                )
+              ],
             );
           });
 
@@ -183,38 +270,40 @@ class _DrawingPageState extends State<DrawingPage>
       }
     }
 
-      RenderRepaintBoundary boundary = canvasGlobalKey.currentContext!.findRenderObject() as RenderRepaintBoundary;
-      ui.Image image = await boundary.toImage(pixelRatio: 3.0);
+    RenderRepaintBoundary boundary = canvasGlobalKey.currentContext!
+        .findRenderObject() as RenderRepaintBoundary;
+    ui.Image image = await boundary.toImage(pixelRatio: 3.0);
 
-      final byteData = await image.toByteData(format: ui.ImageByteFormat.png);
-      final buffer = byteData!.buffer.asUint8List();
-      final directory = await getApplicationDocumentsDirectory();
-      final filePath = '${directory.path}/${drawingName}.png';
-      final file = File(filePath);
-      await file.writeAsBytes(buffer);
+    final byteData = await image.toByteData(format: ui.ImageByteFormat.png);
+    final buffer = byteData!.buffer.asUint8List();
+    final directory = await getApplicationDocumentsDirectory();
+    final filePath = '${directory.path}/${drawingName}.png';
+    final file = File(filePath);
+    await file.writeAsBytes(buffer);
 
-      final strokePath = '${directory.path}/${drawingName}.json';
-      final strokesJson = jsonEncode(allStrokes.value.map((stroke) => stroke.toJson()).toList());
-      await File(strokePath).writeAsString(strokesJson);
+    final strokePath = '${directory.path}/${drawingName}.json';
+    final strokesJson =
+        jsonEncode(allStrokes.value.map((stroke) => stroke.toJson()).toList());
+    await File(strokePath).writeAsString(strokesJson);
 
-      return showDialog<void>(
-          context: context,
-          barrierDismissible: true,
-          builder: (BuildContext context) {
-            return AlertDialog(
-                title: const Text('Drawing Saved'),
-                content: const Text('Your drawing has been successfully saved.'),
-              actions: <Widget>[
-                TextButton(
-                  onPressed: () {
-                    Navigator.of(context).pop(); // Close the dialog
-                    Navigator.of(context).pop(); // Return to main page
-                  },
-                  child: const Text('OK'),
-                ),
-              ],
-            );}
-      );
+    return showDialog<void>(
+        context: context,
+        barrierDismissible: true,
+        builder: (BuildContext context) {
+          return AlertDialog(
+            title: const Text('Drawing Saved'),
+            content: const Text('Your drawing has been successfully saved.'),
+            actions: <Widget>[
+              TextButton(
+                onPressed: () {
+                  Navigator.of(context).pop(); // Close the dialog
+                  Navigator.of(context).pop(); // Return to main page
+                },
+                child: const Text('OK'),
+              ),
+            ],
+          );
+        });
   }
 
   Future<bool?> showSaveDialog() async {
@@ -252,221 +341,236 @@ class _DrawingPageState extends State<DrawingPage>
     );
   }
 
+  double canvasSize = 100;
+  double offsetX = 0.0;
+  double offsetY = 0.0;
+  bool scrolling = false;
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: Column(
-        children: [Container(
-          color: Theme.of(context).colorScheme.inversePrimary,
-          padding: EdgeInsets.fromLTRB(0, 0, 0, 10.0),
-          height: 120,
-          child: Row(
+        body: GestureDetector(
+      onScaleStart: (details) {
+        if (details.pointerCount > 1) {
+          setState(() {
+            scrolling = true;
+            offsetX = details.focalPoint.dx;
+            offsetY = details.focalPoint.dy;
+          });
+        }
+      },
+      onScaleUpdate: (details) {
+        if (details.pointerCount > 1) {
+          setState(() {
+            offsetX += details.focalPoint.dx - offsetX;
+            offsetY += details.focalPoint.dy - offsetY;
+          });
+        }
+      },
+      onScaleEnd: (details) {
+        if (details.pointerCount > 1) {
+          setState(() {
+            scrolling = false;
+          });
+        }
+      },
+      child: Column(
+        children: [
+          Container(
+              color: Theme.of(context).colorScheme.inversePrimary,
+              padding: EdgeInsets.only(bottom: 5.0),
+              height: 100,
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.end,
                 children: [
-                SizedBox(width: 10),
+                  SizedBox(width: 10),
+                  ColorPalette(selectedColorListenable: selectedColor),
+                  SizedBox(width: 15),
+                  ValueListenableBuilder<DrawingTool>(
+                      valueListenable: drawingTool,
+                      builder: (context, tool, child) {
+                        return _IconBox(
+                            iconData: FontAwesomeIcons.pencil,
+                            selected: tool == DrawingTool.pencil,
+                            onTap: () {
+                              drawingTool.value = DrawingTool.pencil;
+                              setState(() {});
+                            },
+                            tooltip: 'Pencil');
+                      }),
+                  ValueListenableBuilder<DrawingTool>(
+                      valueListenable: drawingTool,
+                      builder: (context, tool, child) {
+                        return _IconBox(
+                            iconData: FontAwesomeIcons.eraser,
+                            selected: tool == DrawingTool.eraser,
+                            onTap: () {
+                              drawingTool.value = DrawingTool.eraser;
+                              setState(() {});
+                            },
+                            tooltip: 'Eraser');
+                      }),
+                  SizedBox(width: 15),
                   Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      mainAxisAlignment: MainAxisAlignment.end,
-                    children:[
-                      const SizedBox(height: 60),
-                      Row(
-                        crossAxisAlignment: CrossAxisAlignment.center,
-                        children: [
-                          ColorPalette(selectedColorListenable: selectedColor),
-                          SizedBox(width: 15),
-                          ValueListenableBuilder<DrawingTool>(
-                            valueListenable: drawingTool,
-                            builder: (context, tool, child) {
-                              return _IconBox(
-                                iconData: FontAwesomeIcons.pencil,
-                                selected: tool == DrawingTool.pencil,
-                                onTap: () {
-                                  drawingTool.value = DrawingTool.pencil;
-                                  // Optionally force a rebuild for the sliders if needed
-                                  setState(() {});
-                                },
-                                tooltip: 'Pencil',
-                              );
-                            },
-                          ),
-                          ValueListenableBuilder<DrawingTool>(
-                            valueListenable: drawingTool,
-                            builder: (context, tool, child) {
-                              return _IconBox(
-                                iconData: FontAwesomeIcons.eraser,
-                                selected: tool == DrawingTool.eraser,
-                                onTap: () {
-                                  drawingTool.value = DrawingTool.eraser;
-                                  // Optionally force a rebuild for the sliders if needed
-                                  setState(() {});
-                                },
-                                tooltip: 'Eraser',
-                              );
-                            },
-                          ),
-                          Expanded(
-                            child: Padding(
-                              padding: const EdgeInsets.only(left: 20.0),
-                              child: AnimatedSwitcher(
-                                duration: Duration(milliseconds: 300),
-                                child: drawingTool.value == DrawingTool.pencil
+                      child: AnimatedSwitcher(
+                          duration: Duration(milliseconds: 100),
+                          child: Column(
+                              mainAxisAlignment: MainAxisAlignment.end,
+                              children: [
+                                drawingTool.value == DrawingTool.pencil
                                     ? Row(
-                                  key: ValueKey('pencilSlider'),
-                                  children: [
-                                    const Text(
-                                      'Stroke Size: ',
-                                      style: TextStyle(fontSize: 12),
-                                    ),
-                                    Expanded(
-                                      child: Slider(
-                                        value: strokeSize.value,
-                                        min: 0,
-                                        max: 50,
-                                        onChanged: (val) {
-                                          setState(() {
-                                            strokeSize.value = val;
-                                          });
-                                        },
-                                      ),
-                                    ),
-                                  ],
-                                )
+                                        crossAxisAlignment:
+                                            CrossAxisAlignment.center,
+                                        mainAxisAlignment:
+                                            MainAxisAlignment.end,
+                                        key: ValueKey('pencilSlider'),
+                                        children: [
+                                          const Text(
+                                            'Stroke size: ',
+                                            style: TextStyle(fontSize: 12),
+                                          ),
+                                          Flexible(
+                                              child: Slider(
+                                                  value: strokeSize.value,
+                                                  min: 0,
+                                                  max: 50,
+                                                  onChanged: (val) {
+                                                    setState(() {
+                                                      strokeSize.value = val;
+                                                    });
+                                                  }))
+                                        ],
+                                      )
                                     : Row(
-                                  key: ValueKey('eraserSlider'),
-                                  children: [
-                                    const Text(
-                                      'Eraser Size: ',
-                                      style: TextStyle(fontSize: 12),
-                                    ),
-                                    Expanded(
-                                      child: Slider(
-                                        value: eraserSize.value,
-                                        min: 0,
-                                        max: 50,
-                                        onChanged: (val) {
-                                          setState(() {
-                                            eraserSize.value = val;
-                                          });
-                                        },
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                            ),
-                          ),
-                        ],)]))]),),
+                                        crossAxisAlignment:
+                                            CrossAxisAlignment.center,
+                                        mainAxisAlignment:
+                                            MainAxisAlignment.end,
+                                        key: ValueKey('eraserSlider'),
+                                        children: [
+                                          const Text(
+                                            'Eraser Size: ',
+                                            style: TextStyle(fontSize: 12),
+                                          ),
+                                          Flexible(
+                                              child: Slider(
+                                                  value: eraserSize.value,
+                                                  min: 0,
+                                                  max: 50,
+                                                  onChanged: (val) {
+                                                    setState(
+                                                      () {
+                                                        eraserSize.value = val;
+                                                      },
+                                                    );
+                                                  }))
+                                        ],
+                                      )
+                              ])))
+                ],
+              )),
           Expanded(
-            child: Stack(
-              children: [SizedBox(
-                  height: MediaQuery.of(context).size.height,
-                  child: Stack(
-                    children: [
-                      AnimatedBuilder(
-                        animation: Listenable.merge([
-                          currentStroke,
-                          allStrokes,
-                          selectedColor,
-                          strokeSize,
-                          eraserSize,
-                          drawingTool,
-                        ]),
-                        builder: (context, _) {
-                          return DrawingCanvas(
-                            options: DrawingCanvasOptions(
-                              currentTool: drawingTool.value,
-                              size: drawingTool.value == DrawingTool.eraser ? eraserSize.value : strokeSize.value,
-                              strokeColor: selectedColor.value,
-                              backgroundColor: Colors.white,
-                            ),
-                            canvasKey: canvasGlobalKey,
-                            currentStrokeListenable: currentStroke,
-                            strokesListenable: allStrokes,
-                          );
-                        },
-                      ),
-                      if (_currentPointerPosition != null) // Draw only if the position is set
-                        Positioned(
-                          left: _currentPointerPosition!.dx - 17, // Center the dot
-                          top: _currentPointerPosition!.dy - 17,
-                          child: Container(
-                            width: 10,
-                            height: 10,
-                            decoration: BoxDecoration(
-                              border: Border.all(color: Colors.black, width: 2), // Black hollow circle
-                              shape: BoxShape.circle,
-                            ),
-                          ),
-                        ),
-                    ],
+              child: Stack(
+            children: [
+              AnimatedBuilder(
+                animation: Listenable.merge([
+                  currentStroke,
+                  allStrokes,
+                  selectedColor,
+                  strokeSize,
+                  eraserSize,
+                  drawingTool
+                ]),
+                builder: (context, _) {
+                  return DrawingCanvas(
+                      options: DrawingCanvasOptions(
+                          currentTool: drawingTool.value,
+                          size: drawingTool.value == DrawingTool.eraser
+                              ? eraserSize.value
+                              : strokeSize.value,
+                          strokeColor: selectedColor.value,
+                          backgroundColor: Colors.white),
+                      canvasKey: canvasGlobalKey,
+                      currentStrokeListenable: currentStroke,
+                      strokesListenable: allStrokes);
+                },
+              ),
+              if (_currentPointerPosition != null)
+                Positioned(
+                  left: _currentPointerPosition!.dx - 17,
+                  top: _currentPointerPosition!.dy - 17,
+                  child: Container(
+                    width: 10,
+                    height: 10,
+                    decoration: BoxDecoration(
+                      border: Border.all(color: Colors.black, width: 2),
+                      shape: BoxShape.circle,
+                    ),
                   ),
                 ),
-                GestureDetector(
-                  onDoubleTap: () {
-                      final strokeCount = allStrokes.value.length;
-                      allStrokes.value.removeRange(strokeCount - 2, strokeCount);
-                      if (strokeCount - 2 >= 1) {
-                        final lastStroke = allStrokes.value.last.points;
-                        List<Point> lastPoints = lastStroke.map((offset) => Point(offset.dx, offset.dy, 0)).toList();
+              GestureDetector(onDoubleTap: () {
+                final strokeCount = allStrokes.value.length;
+                allStrokes.value.removeRange(strokeCount - 2, strokeCount);
+                if (strokeCount - 2 > 0) {
+                  final lastStroke = allStrokes.value.last.points;
+                  List<Point> lastPoints = lastStroke
+                      .map((offset) => Point(offset.dx, offset.dy, 0))
+                      .toList();
+                  String recognizedShape = shapeRecognizer(lastPoints);
 
-                        String recognizedShape = pDollarRecognizer(lastPoints);
-                        String shapeName = pDollarRecognizer(_points);
+                  if (recognizedShape == "circle") {
+                    Offset center = calculateCenter(lastPoints);
+                    double averageRadius =
+                        calculateAverageRadius(lastPoints, center);
+                    List<Offset> normalizedCircle =
+                        generatePerfectCircle(center, averageRadius, 200);
+                    allStrokes.value.last.points = normalizedCircle;
+                  } else {
+                    showDialog(
+                      context: context,
+                      builder: (context) =>
+                          AlertDialog(title: Text("No shape recognized")),
+                    );
+                  }
+                }
+              }, onPanStart: (details) {
+                if (!scrolling) {
+                  _points.clear();
+                  _points.add(Point(
+                      details.localPosition.dx, details.localPosition.dy, 0));
 
-                        if (shapeName == "checkmark") {
-                          showDialog<void>(
-                              context: context,
-                              barrierDismissible: true,
-                              builder: (BuildContext context) {
-                                return AlertDialog(
-                                  title: const Text('check recognized'),
-                                  content: const Text('Your drawing has been successfully saved.'),
-                                  actions: <Widget>[
-                                    TextButton(
-                                      onPressed: () {
-                                        Navigator.of(context).pop(); // Close the dialog
-                                      },
-                                      child: const Text('OK'),
-                                    ),
-                                  ],
-                                );}
-                          );
-                        }
-                      }
-                  },
-                  onPanStart: (details) {
-                    _points.clear();
-                    _points.add(Point(details.localPosition.dx, details.localPosition.dy, 0));
-
-                    setState(() {
-                      _currentPointerPosition = details.localPosition;
-                    });
-                  },
-                  onPanUpdate: (details) {
-                    setState(() {
-                      _points.add(Point(details.localPosition.dx, details.localPosition.dy, 0));
-                      _currentPointerPosition = details.localPosition;
-                    });
-
-                  },
-                  onPanEnd: (details) async {
-                    if (drawingTool.value != DrawingTool.eraser && _points.isNotEmpty) {
-                      String gestureName = pDollarRecognizer(_points);
-                      if (gestureName   == "checkmark" || gestureName == "s") {
-                        print("gesture name:" + gestureName);
-                        await _saveDrawing();
-                      }
+                  setState(() {
+                    _currentPointerPosition = details.localPosition;
+                  });
+                }
+              }, onPanUpdate: (details) {
+                if (!scrolling) {
+                  setState(() {
+                    _points.add(Point(
+                        details.localPosition.dx, details.localPosition.dy, 0));
+                    _currentPointerPosition = details.localPosition;
+                  });
+                }
+              }, onPanEnd: (details) async {
+                if (!scrolling) {
+                  if (drawingTool.value != DrawingTool.eraser &&
+                      _points.isNotEmpty) {
+                    String gestureName = pDollarRecognizer(_points);
+                    if (gestureName == "checkmark" || gestureName == "s") {
+                      print("gesture name:" + gestureName);
+                      await _saveDrawing();
                     }
+                  }
 
-                    _currentPointerPosition = null;
+                  _currentPointerPosition = null;
 
-                    setState(() {
-                    });
-                  },
-                ),
-              ]
-            )
-          )
-        ]
+                  setState(() {});
+                }
+              })
+            ],
+          ))
+        ],
       ),
-    );}
+    ));
+  }
 }
