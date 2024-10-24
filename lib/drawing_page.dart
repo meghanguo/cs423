@@ -17,6 +17,51 @@ import 'color_palette.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:path_provider/path_provider.dart';
 
+List<Point> circlePoints = [Point(100, 0, 0),
+    Point(99, 14, 0),
+    Point(96, 28, 0),
+    Point(91, 41, 0),
+    Point(84, 53, 0),
+    Point(75, 64, 0),
+    Point(64, 75, 0),
+    Point(53, 84, 0),
+    Point(41, 91, 0),
+    Point(28, 96, 0),
+    Point(14, 99, 0),
+    Point(0, 100, 0),
+    Point(-14, 99, 0),
+    Point(-28, 96, 0),
+    Point(-41, 91, 0),
+    Point(-53, 84, 0),
+    Point(-64, 75, 0),
+    Point(-75, 64, 0),
+    Point(-84, 53, 0),
+    Point(-91, 41, 0),
+    Point(-96, 28, 0),
+    Point(-99, 14, 0),
+    Point(-100, 0, 0),
+    Point(-99, -14, 0),
+    Point(-96, -28, 0),
+    Point(-91, -41, 0),
+    Point(-84, -53, 0),
+    Point(-75, -64, 0),
+    Point(-64, -75, 0),
+    Point(-53, -84, 0),
+    Point(-41, -91, 0),
+    Point(-28, -96, 0),
+    Point(-14, -99, 0),
+    Point(0, -100, 0),
+    Point(14, -99, 0),
+    Point(28, -96, 0),
+    Point(41, -91, 0),
+    Point(53, -84, 0),
+    Point(64, -75, 0),
+    Point(75, -64, 0),
+    Point(84, -53, 0),
+    Point(91, -41, 0),
+    Point(96, -28, 0),
+    Point(99, -14, 0)];
+
 class Point {
   final double X;
   final double Y;
@@ -172,8 +217,24 @@ class _DrawingPageState extends State<DrawingPage>
     return sumRad / points.length;
   }
 
-  List<Offset> generatePerfectCircle(
-      Offset center, double radius, int numPoints) {
+  List<Offset> rotatePoints(List<Point> points, Offset center) {
+    List<Offset> rotatedPoints = [];
+    for (var p in points) {
+      double translatedX = p.X - center.dx;
+      double translatedY = p.Y - center.dy;
+
+      // Rotate point
+      double rotatedX = translatedX - translatedY ;
+      double rotatedY = translatedX + translatedY ;
+
+      // Translate point back
+      rotatedPoints.add(Offset(rotatedX + center.dx / 2, rotatedY + center.dy / 2));
+    }
+
+    return rotatedPoints;
+  }
+
+  List<Offset> generateNormalizedCircle(Offset center, double radius, int numPoints) {
     List<Offset> circlePoints = [];
     for (int i = 0; i < numPoints; i++) {
       double currAngle =  2 * pi * i / numPoints;
@@ -184,6 +245,82 @@ class _DrawingPageState extends State<DrawingPage>
 
     return circlePoints;
   }
+
+  List<Offset> generateNormalizedTriangle(
+      Offset center, double size) {
+// Calculate the vertices of the equilateral triangle
+    double height = (size * (sqrt(3) / 2)); // Height of the triangle
+    List<Offset> vertices = [
+      Offset(center.dx, center.dy - height / 2), // Top vertex
+      Offset(center.dx - size / 2, center.dy + height / 2), // Bottom left vertex
+      Offset(center.dx + size / 2, center.dy + height / 2), // Bottom right vertex
+    ];
+
+    List<Offset> points = [];
+
+    // Calculate the number of points for each side
+    int pointsPerSide = 50; // Split points evenly among 3 sides
+
+    // Top edge
+    for (int i = 0; i <= pointsPerSide; i++) {
+      double t = i / pointsPerSide; // Normalized value from 0 to 1
+      points.add(Offset(
+          vertices[0].dx + (vertices[1].dx - vertices[0].dx) * t,
+          vertices[0].dy + (vertices[1].dy - vertices[0].dy) * t
+      )); // Top edge
+    }
+
+    // Bottom left edge
+    for (int i = 0; i <= pointsPerSide; i++) {
+      double t = i / pointsPerSide;
+      points.add(Offset(
+          vertices[1].dx + (vertices[2].dx - vertices[1].dx) * t,
+          vertices[1].dy + (vertices[2].dy - vertices[1].dy) * t
+      )); // Bottom left edge
+    }
+
+    // Bottom right edge
+    for (int i = 0; i <= pointsPerSide; i++) {
+      double t = i / pointsPerSide;
+      points.add(Offset(
+          vertices[2].dx + (vertices[0].dx - vertices[2].dx) * t,
+          vertices[2].dy + (vertices[0].dy - vertices[2].dy) * t
+      )); // Bottom right edge
+    }
+
+    return points;
+  }
+
+  List<Offset> generateNormalizedSquarePoints(Offset center, double size) {
+    double halfSize = size / 2;
+
+    List<Offset> points = [];
+
+    int pointsPerSide = 50;
+
+    for (int i = 0; i <= pointsPerSide; i++) {
+      double t = i / pointsPerSide; // Normalized value from 0 to 1
+      points.add(Offset(center.dx - halfSize + t * size, center.dy - halfSize)); // Top edge
+    }
+
+    for (int i = 0; i <= pointsPerSide; i++) {
+      double t = i / pointsPerSide;
+      points.add(Offset(center.dx + halfSize, center.dy - halfSize + t * size)); // Right edge
+    }
+
+    for (int i = 0; i <= pointsPerSide; i++) {
+      double t = i / pointsPerSide;
+      points.add(Offset(center.dx + halfSize - t * size, center.dy + halfSize)); // Bottom edge
+    }
+
+    for (int i = 0; i <= pointsPerSide; i++) {
+      double t = i / pointsPerSide;
+      points.add(Offset(center.dx - halfSize, center.dy + halfSize - t * size)); // Left edge
+    }
+
+    return points;
+  }
+
 
   List<String> savedDrawingPaths = [];
 
@@ -389,18 +526,6 @@ class _DrawingPageState extends State<DrawingPage>
                             },
                             tooltip: 'Eraser'));
                       }),
-                  // ValueListenableBuilder<DrawingTool>(
-                  //     valueListenable: drawingTool,
-                  //     builder: (context, tool, child) {
-                  //       return _IconBox(
-                  //           iconData: FontAwesomeIcons.hand,
-                  //           selected: tool == DrawingTool.scroll,
-                  //           onTap: () {
-                  //             drawingTool.value = DrawingTool.scroll;
-                  //             setState(() {});
-                  //           },
-                  //           tooltip: 'Scroll');
-                  //     }),
                   SizedBox(width: 15),
                   Expanded(
                       child: AnimatedSwitcher(
@@ -460,51 +585,6 @@ class _DrawingPageState extends State<DrawingPage>
                               ])))
                 ],
               ),
-              // if we make column inside that two rows, one with the paint, second could be this
-              // Row(
-              //   children: [
-              //     ValueListenableBuilder<DrawingTool>(
-              //       valueListenable: drawingTool,
-              //       builder: (context, tool, child) {
-              //         return _IconBox(
-              //           iconData: FontAwesomeIcons.line,
-              //           selected: tool == DrawingTool.line,
-              //           onTap: () {
-              //             drawingTool.value = DrawingTool.line;
-              //             // No need to use setState here since ValueListenableBuilder takes care of the rebuild
-              //           },
-              //           tooltip: 'Line',
-              //         );
-              //       },
-              //     ),
-              //     ValueListenableBuilder<DrawingTool>(
-              //       valueListenable: drawingTool,
-              //       builder: (context, tool, child) {
-              //         return _IconBox(
-              //           iconData: FontAwesomeIcons.circle,
-              //           selected: tool == DrawingTool.circle,
-              //           onTap: () {
-              //             drawingTool.value = DrawingTool.circle;
-              //           },
-              //           tooltip: 'Circle',
-              //         );
-              //       },
-              //     ),
-              //     ValueListenableBuilder<DrawingTool>(
-              //       valueListenable: drawingTool,
-              //       builder: (context, tool, child) {
-              //         return _IconBox(
-              //           iconData: FontAwesomeIcons.square,
-              //           selected: tool == DrawingTool.rectangle,
-              //           onTap: () {
-              //             drawingTool.value = DrawingTool.rectangle;
-              //           },
-              //           tooltip: 'Rectangle',
-              //         );
-              //       },
-              //     ),
-              //   ],
-              // )
           ),
           Expanded(
             // child:AspectRatio(aspectRatio: 1,
@@ -514,7 +594,7 @@ class _DrawingPageState extends State<DrawingPage>
                   child: SingleChildScrollView(
                       scrollDirection: Axis.vertical,
                       physics: scroll ? AlwaysScrollableScrollPhysics() : NeverScrollableScrollPhysics(),
-                      child: Container(
+                      child: SizedBox(
                           width: 1000,
                           height: 1000,
                           child: Stack(
@@ -561,7 +641,7 @@ class _DrawingPageState extends State<DrawingPage>
                                 absorbing: scroll,
                               child:
                               GestureDetector(
-                                  onDoubleTap: () {
+                                  onDoubleTap: () async {
                                 final strokeCount = allStrokes.value.length;
                                 allStrokes.value
                                     .removeRange(strokeCount - 2, strokeCount);
@@ -576,23 +656,110 @@ class _DrawingPageState extends State<DrawingPage>
                                       shapeRecognizer(lastPoints);
 
                                   if (recognizedShape == "circle") {
-                                    Offset center = calculateCenter(lastPoints);
-                                    double averageRadius =
-                                        calculateAverageRadius(
-                                            lastPoints, center);
-                                    List<Offset> normalizedCircle =
-                                        generatePerfectCircle(
-                                            center, averageRadius, 200);
-                                    allStrokes.value.last.points =
-                                        normalizedCircle;
-                                  } else {
+                                    final convert = await showDialog<bool>(
+                                        context: context,
+                                        barrierDismissible: false,
+                                        builder: (BuildContext context) {
+                                          return AlertDialog(
+                                            content: Text("Change to standard circle?"),
+                                            actions: <Widget>[
+                                              TextButton(
+                                                  onPressed: () {
+                                                    Navigator.of(context).pop(false);
+                                                  },
+                                                  child: const Text('No')),
+                                              TextButton(
+                                                onPressed: () {
+                                                    Navigator.of(context).pop(true);
+                                                },
+                                                child: const Text("Yes"),
+                                              )
+                                            ],
+                                          );
+                                        });
+
+                                    if (convert!) {
+                                      Offset center = calculateCenter(lastPoints);
+                                      double averageRadius = calculateAverageRadius(lastPoints, center);
+                                      List<Offset> normalizedCircle = generateNormalizedCircle(center, averageRadius, 200);
+                                      allStrokes.value.last.points = normalizedCircle;
+                                    }
+                                  }
+                                  else if (recognizedShape == "triangle"){
+                                    final convert = await showDialog<bool>(
+                                        context: context,
+                                        barrierDismissible: false,
+                                        builder: (BuildContext context) {
+                                          return AlertDialog(
+                                            content: Text("Change to standard triangle?"),
+                                            actions: <Widget>[
+                                              TextButton(
+                                                  onPressed: () {
+                                                    Navigator.of(context).pop(false);
+                                                  },
+                                                  child: const Text('No')),
+                                              TextButton(
+                                                onPressed: () {
+                                                  Navigator.of(context).pop(true);
+                                                },
+                                                child: const Text("Yes"),
+                                              )
+                                            ],
+                                          );
+                                        });
+                                    if (convert!) {
+                                      Offset center = calculateCenter(lastPoints);
+                                      List<Offset> normalizedTriangle = generateNormalizedTriangle(center, 100);
+                                      allStrokes.value.last.points = normalizedTriangle;
+                                      // Offset center = calculateCenter(lastPoints);
+                                      // double averageRadius = calculateAverageRadius(lastPoints, center);
+                                      // List<Offset> normalizedCircle = generateNormalizedCircle(center, averageRadius, 200);
+                                      // allStrokes.value.last.points = normalizedCircle;
+                                    }
+                                  } else if (recognizedShape == "square"){
+                                    final convert = await showDialog<bool>(
+                                        context: context,
+                                        barrierDismissible: false,
+                                        builder: (BuildContext context) {
+                                          return AlertDialog(
+                                            content: Text("Change to standard square?"),
+                                            actions: <Widget>[
+                                              TextButton(
+                                                  onPressed: () {
+                                                    Navigator.of(context).pop(false);
+                                                  },
+                                                  child: const Text('No')),
+                                              TextButton(
+                                                onPressed: () {
+                                                  Navigator.of(context).pop(true);
+                                                },
+                                                child: const Text("Yes"),
+                                              )
+                                            ],
+                                          );
+                                        });
+                                    if (convert!) {
+                                      Offset center = calculateCenter(lastPoints);
+                                      List<Offset> normalizedSquare = generateNormalizedSquarePoints(center, 100); // You can choose your size
+                                      allStrokes.value.last.points = normalizedSquare;
+                                      // Offset center = calculateCenter(lastPoints);
+                                      // double averageRadius = calculateAverageRadius(lastPoints, center);
+                                      // List<Offset> normalizedCircle = generateNormalizedCircle(center, averageRadius, 200);
+                                      // allStrokes.value.last.points = normalizedCircle;
+                                    }
+                                  }
+                                  else {
                                     showDialog(
                                       context: context,
                                       builder: (context) => AlertDialog(
+                                      // title: Text("$recognizedShape")),
                                           title: Text("No shape recognized")),
                                     );
                                   }
                                 }
+                                setState(() {
+
+                                });
                               },
                                   onPanStart: (details) {
                                       _points.clear();
@@ -615,8 +782,7 @@ class _DrawingPageState extends State<DrawingPage>
                                       _points.isNotEmpty) {
                                     String gestureName =
                                         pDollarRecognizer(_points);
-                                    if (gestureName == "checkmark" ||
-                                        gestureName == "s") {
+                                    if (gestureName == "checkmark") {
                                       print("gesture name:" + gestureName);
                                       await _saveDrawing();
                                     }

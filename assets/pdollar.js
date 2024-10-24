@@ -89,7 +89,6 @@ function Result(name, score, ms) // constructor
 //
 // PDollarRecognizer constants
 //
-const NumPointClouds = 20;
 const NumPoints = 32;
 const Origin = new Point(0,0,0);
 //
@@ -176,7 +175,7 @@ function PDollarRecognizer() // constructor
 	}
 	this.DeleteUserGestures = function()
 	{
-		this.PointClouds.length = NumPointClouds; // clears any beyond the original set
+		this.PointClouds.length = 0; // clears any beyond the original set
 		return NumPointClouds;
 	}
 }
