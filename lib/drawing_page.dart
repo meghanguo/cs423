@@ -345,7 +345,7 @@ class _DrawingPageState extends State<DrawingPage>
           Container(
               color: Theme.of(context).colorScheme.inversePrimary,
               padding: EdgeInsets.only(bottom: 5.0),
-              height: 100,
+              height: 170,
               child: Row(
                 crossAxisAlignment: CrossAxisAlignment.end,
                 children: [
@@ -446,7 +446,53 @@ class _DrawingPageState extends State<DrawingPage>
                                       )
                               ])))
                 ],
-              )),
+              ),
+              // if we make column inside that two rows, one with the paint, second could be this
+              // Row(
+              //   children: [
+              //     ValueListenableBuilder<DrawingTool>(
+              //       valueListenable: drawingTool,
+              //       builder: (context, tool, child) {
+              //         return _IconBox(
+              //           iconData: FontAwesomeIcons.line,
+              //           selected: tool == DrawingTool.line,
+              //           onTap: () {
+              //             drawingTool.value = DrawingTool.line;
+              //             // No need to use setState here since ValueListenableBuilder takes care of the rebuild
+              //           },
+              //           tooltip: 'Line',
+              //         );
+              //       },
+              //     ),
+              //     ValueListenableBuilder<DrawingTool>(
+              //       valueListenable: drawingTool,
+              //       builder: (context, tool, child) {
+              //         return _IconBox(
+              //           iconData: FontAwesomeIcons.circle,
+              //           selected: tool == DrawingTool.circle,
+              //           onTap: () {
+              //             drawingTool.value = DrawingTool.circle;
+              //           },
+              //           tooltip: 'Circle',
+              //         );
+              //       },
+              //     ),
+              //     ValueListenableBuilder<DrawingTool>(
+              //       valueListenable: drawingTool,
+              //       builder: (context, tool, child) {
+              //         return _IconBox(
+              //           iconData: FontAwesomeIcons.square,
+              //           selected: tool == DrawingTool.rectangle,
+              //           onTap: () {
+              //             drawingTool.value = DrawingTool.rectangle;
+              //           },
+              //           tooltip: 'Rectangle',
+              //         );
+              //       },
+              //     ),
+              //   ],
+              // )
+          ),
           Expanded(
               child: SingleChildScrollView(
                   scrollDirection: Axis.horizontal,

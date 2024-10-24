@@ -1,5 +1,53 @@
 import 'package:flutter/material.dart';
 
+// Enum for StrokeType
+enum StrokeType {
+  normal,
+  eraser,
+  scroll,
+  line,
+  rectangle,
+  circle;
+
+  static StrokeType fromString(String value) {
+    switch (value) {
+      case 'normal':
+        return StrokeType.normal;
+      case 'eraser':
+        return StrokeType.eraser;
+      case 'scroll':
+        return StrokeType.scroll;
+      case 'line':
+        return StrokeType.line;
+      case 'circle':
+        return StrokeType.circle;
+      case 'rectangle':
+        return StrokeType.rectangle;
+      default:
+        return StrokeType.normal;
+    }
+  }
+
+  @override
+  String toString() {
+    switch (this) {
+      case StrokeType.normal:
+        return 'normal';
+      case StrokeType.eraser:
+        return 'eraser';
+      case StrokeType.scroll:
+        return 'scroll';
+      case StrokeType.line:
+        return 'line';
+      case StrokeType.circle:
+        return 'circle';
+      case StrokeType.rectangle:
+        return 'rectangle';
+    }
+  }
+}
+
+// Abstract class for strokes
 abstract class Stroke {
   List<Offset> points;
   final Color color;
@@ -24,6 +72,9 @@ abstract class Stroke {
 
   bool get isEraser => strokeType == StrokeType.eraser;
   bool get isNormal => strokeType == StrokeType.normal;
+  bool get isLine => strokeType == StrokeType.line;
+  bool get isCircle => strokeType == StrokeType.circle;
+  bool get isRectangle => strokeType == StrokeType.rectangle;
 
   Map<String, dynamic> toJson() {
     return {
@@ -45,49 +96,47 @@ abstract class Stroke {
     double opacity = json['opacity'];
     StrokeType strokeType = StrokeType.fromString(json['strokeType']);
 
-    // Create a NormalStroke or EraserStroke based on strokeType
-    if (strokeType == StrokeType.eraser) {
-      return EraserStroke(
-        points: points,
-        color: color,
-        size: size,
-        opacity: opacity,
-      );
-    } else {
-      return NormalStroke(
-        points: points,
-        color: color,
-        size: size,
-        opacity: opacity,
-      );
+    switch (strokeType) {
+      case StrokeType.eraser:
+        return EraserStroke(
+          points: points,
+          color: color,
+          size: size,
+          opacity: opacity,
+        );
+      case StrokeType.line:
+        return LineStroke(
+          points: points,
+          color: color,
+          size: size,
+          opacity: opacity,
+        );
+      case StrokeType.rectangle:
+        return RectangleStroke(
+          points: points,
+          color: color,
+          size: size,
+          opacity: opacity,
+        );
+      case StrokeType.circle:
+        return CircleStroke(
+          points: points,
+          color: color,
+          size: size,
+          opacity: opacity,
+        );
+      default:
+        return NormalStroke(
+          points: points,
+          color: color,
+          size: size,
+          opacity: opacity,
+        );
     }
   }
 }
 
-class EraserStroke extends Stroke {
-  EraserStroke({
-    required super.points,
-    super.color,
-    super.size,
-    super.opacity,
-  }) : super(strokeType: StrokeType.eraser);
-
-  @override
-  EraserStroke copyWith({
-    List<Offset>? points,
-    Color? color,
-    double? size,
-    double? opacity,
-  }) {
-    return EraserStroke(
-      points: points ?? this.points,
-      color: color ?? this.color,
-      size: size ?? this.size,
-      opacity: opacity ?? this.opacity,
-    );
-  }
-}
-
+// NormalStroke class for normal strokes
 class NormalStroke extends Stroke {
   NormalStroke({
     required super.points,
@@ -112,33 +161,102 @@ class NormalStroke extends Stroke {
   }
 }
 
-enum StrokeType {
-  normal,
-  eraser,
-  scroll;
-
-  static StrokeType fromString(String value) {
-    switch (value) {
-      case 'normal':
-        return StrokeType.normal;
-      case 'eraser':
-        return StrokeType.eraser;
-      case 'scroll':
-        return StrokeType.scroll;
-      default:
-        return StrokeType.normal;
-    }
-  }
+// EraserStroke class
+class EraserStroke extends Stroke {
+  EraserStroke({
+    required super.points,
+    super.color,
+    super.size,
+    super.opacity,
+  }) : super(strokeType: StrokeType.eraser);
 
   @override
-  String toString() {
-    switch (this) {
-      case StrokeType.normal:
-        return 'normal';
-      case StrokeType.eraser:
-        return 'eraser';
-      case StrokeType.scroll:
-        return 'scroll';
-    }
+  EraserStroke copyWith({
+    List<Offset>? points,
+    Color? color,
+    double? size,
+    double? opacity,
+  }) {
+    return EraserStroke(
+      points: points ?? this.points,
+      color: color ?? this.color,
+      size: size ?? this.size,
+      opacity: opacity ?? this.opacity,
+    );
+  }
+}
+
+// LineStroke class
+class LineStroke extends Stroke {
+  LineStroke({
+    required super.points,
+    super.color,
+    super.size,
+    super.opacity,
+  }) : super(strokeType: StrokeType.line);
+
+  @override
+  LineStroke copyWith({
+    List<Offset>? points,
+    Color? color,
+    double? size,
+    double? opacity,
+  }) {
+    return LineStroke(
+      points: points ?? this.points,
+      color: color ?? this.color,
+      size: size ?? this.size,
+      opacity: opacity ?? this.opacity,
+    );
+  }
+}
+
+// RectangleStroke class
+class RectangleStroke extends Stroke {
+  RectangleStroke({
+    required super.points,
+    super.color,
+    super.size,
+    super.opacity,
+  }) : super(strokeType: StrokeType.rectangle);
+
+  @override
+  RectangleStroke copyWith({
+    List<Offset>? points,
+    Color? color,
+    double? size,
+    double? opacity,
+  }) {
+    return RectangleStroke(
+      points: points ?? this.points,
+      color: color ?? this.color,
+      size: size ?? this.size,
+      opacity: opacity ?? this.opacity,
+    );
+  }
+}
+
+// CircleStroke class
+class CircleStroke extends Stroke {
+  CircleStroke({
+    required super.points,
+    super.color,
+    super.size,
+    super.opacity,
+  }) : super(strokeType: StrokeType.circle);
+
+  @override
+  CircleStroke copyWith({
+    List<Offset>? points,
+    Color? color,
+    double? size,
+    double? opacity,
+  }) {
+    return CircleStroke(
+      points: points ?? this.points,
+      color: color ?? this.color,
+      size: size ?? this.size,
+      opacity: opacity ?? this.opacity,
+    );
   }
 }

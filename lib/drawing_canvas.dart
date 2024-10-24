@@ -152,6 +152,28 @@ class _DrawingCanvasPainter extends CustomPainter {
         }
         canvas.drawPath(path, paint);
         continue;
+      }else if (stroke is LineStroke) {
+        // scale the points to the standard size
+        final firstPoint = points.first.scaleFromStandard(size);
+        final lastPoint = points.last.scaleFromStandard(size);
+        canvas.drawLine(firstPoint, lastPoint, paint);
+        continue;
+      } else if (stroke is CircleStroke) {
+        // scale the points to the standard size
+        final firstPoint = points.first.scaleFromStandard(size);
+        final lastPoint = points.last.scaleFromStandard(size);
+        final rect = Rect.fromPoints(firstPoint, lastPoint);
+
+        canvas.drawOval(rect, paint);
+        continue;
+      } else if (stroke is RectangleStroke) {
+        // scale the points to the standard size
+        final firstPoint = points.first.scaleFromStandard(size);
+        final lastPoint = points.last.scaleFromStandard(size);
+        final rect = Rect.fromPoints(firstPoint, lastPoint);
+
+        canvas.drawRect(rect, paint);
+        continue;
       }
 
       else if (stroke is EraserStroke) {

@@ -10,6 +10,12 @@ extension DrawingToolExtensions on DrawingTool {
         return StrokeType.eraser;
       case DrawingTool.scroll:
         return StrokeType.scroll;
+      case DrawingTool.line:
+        return StrokeType.line;
+      case DrawingTool.circle:
+        return StrokeType.circle;
+      case DrawingTool.rectangle:
+        return StrokeType.rectangle;
     }
   }
 }
