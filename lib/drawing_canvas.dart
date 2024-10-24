@@ -1,5 +1,4 @@
 import 'dart:math';
-import 'dart:ui' as ui;
 import 'package:flutter/material.dart';
 import 'package:painting_app_423/current_stroke_value_notifier.dart';
 import 'package:painting_app_423/drawing_tool.dart';
@@ -53,7 +52,7 @@ class _DrawingCanvasState extends State<DrawingCanvas> {
       opacity: opacity,
       type: currentTool.strokeType,
     );
-    print('Pointer Down: ${standardOffset}');
+    // print('Pointer Down: ${standardOffset}');
     widget.onDrawingStrokeChanged?.call(_currentStroke.value);
   }
 
@@ -65,7 +64,7 @@ class _DrawingCanvasState extends State<DrawingCanvas> {
 
     final standardOffset = offset.scaleToStandard(box.size);
     _currentStroke.addPoint(standardOffset);
-    print('Pointer Move: ${standardOffset}');
+    // print('Pointer Move: ${standardOffset}');
     widget.onDrawingStrokeChanged?.call(_currentStroke.value);
   }
 
@@ -77,7 +76,7 @@ class _DrawingCanvasState extends State<DrawingCanvas> {
     _strokes.value = List<Stroke>.from(_strokes.value)..add(_currentStroke.value!);
     widget.strokesListenable.value = List<Stroke>.from(_strokes.value);
 
-    print('Pointer Up: Added stroke with ${_currentStroke.value}');
+    // print('Pointer Up: Added stroke with ${_currentStroke.value}');
     _currentStroke.clear();
     widget.onDrawingStrokeChanged?.call(null);
   }

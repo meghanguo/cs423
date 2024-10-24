@@ -1,10 +1,7 @@
 enum DrawingTool {
   pencil,
   eraser,
-  scroll,
-  line,
-  rectangle,
-  circle;
+  scroll;
 
   bool get isEraser => this == DrawingTool.eraser;
   bool get isPencil => this == DrawingTool.pencil;

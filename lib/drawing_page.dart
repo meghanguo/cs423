@@ -1,7 +1,6 @@
 import 'dart:io';
 import 'dart:math';
 import 'dart:ui' as ui;
-import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter_js/flutter_js.dart';
@@ -16,51 +15,6 @@ import 'dart:convert';
 import 'color_palette.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:path_provider/path_provider.dart';
-
-List<Point> circlePoints = [Point(100, 0, 0),
-    Point(99, 14, 0),
-    Point(96, 28, 0),
-    Point(91, 41, 0),
-    Point(84, 53, 0),
-    Point(75, 64, 0),
-    Point(64, 75, 0),
-    Point(53, 84, 0),
-    Point(41, 91, 0),
-    Point(28, 96, 0),
-    Point(14, 99, 0),
-    Point(0, 100, 0),
-    Point(-14, 99, 0),
-    Point(-28, 96, 0),
-    Point(-41, 91, 0),
-    Point(-53, 84, 0),
-    Point(-64, 75, 0),
-    Point(-75, 64, 0),
-    Point(-84, 53, 0),
-    Point(-91, 41, 0),
-    Point(-96, 28, 0),
-    Point(-99, 14, 0),
-    Point(-100, 0, 0),
-    Point(-99, -14, 0),
-    Point(-96, -28, 0),
-    Point(-91, -41, 0),
-    Point(-84, -53, 0),
-    Point(-75, -64, 0),
-    Point(-64, -75, 0),
-    Point(-53, -84, 0),
-    Point(-41, -91, 0),
-    Point(-28, -96, 0),
-    Point(-14, -99, 0),
-    Point(0, -100, 0),
-    Point(14, -99, 0),
-    Point(28, -96, 0),
-    Point(41, -91, 0),
-    Point(53, -84, 0),
-    Point(64, -75, 0),
-    Point(75, -64, 0),
-    Point(84, -53, 0),
-    Point(91, -41, 0),
-    Point(96, -28, 0),
-    Point(99, -14, 0)];
 
 class Point {
   final double X;
@@ -78,6 +32,7 @@ class Point {
   }
 }
 
+// Icon boxes for drawing tools
 class _IconBox extends StatelessWidget {
   final IconData iconData;
   final bool selected;
@@ -138,8 +93,7 @@ class _DrawingPageState extends State<DrawingPage>
   final ValueNotifier<List<Stroke>> allStrokes = ValueNotifier([]);
 
   List<Point> _points = []; // Store the drawn points for gesture recognition
-
-  List<Stroke> strokes = [];
+  List<Stroke> strokes = []; // Store the stroks drawn
   String recognizedGesture = '';
   Offset? _currentPointerPosition;
   late JavascriptRuntime jsRuntime;
@@ -157,41 +111,37 @@ class _DrawingPageState extends State<DrawingPage>
     jsRuntime = getJavascriptRuntime();
   }
 
+  // Load js code - this time we need multiple recognizers since it would be faster to separate out the shapes
   Future<void> loadJs() async {
     jsCode = await rootBundle.loadString('assets/pdollar.js');
     jsRuntime.evaluate(jsCode);
     jsRuntime.evaluate('var recognizer = new PDollarRecognizer();');
     String fileContent =
         await rootBundle.loadString('assets/drawing_page_gestures.txt');
-    final result =
-        jsRuntime.evaluate('recognizer.ProcessGesturesFile(`$fileContent`);');
+    final result = jsRuntime.evaluate('recognizer.ProcessGesturesFile(`$fileContent`);');
 
     jsRuntime.evaluate('var shapeRecognizer = new PDollarRecognizer();');
     String shapeFileContent =
         await rootBundle.loadString('assets/drawing_shapes.txt');
-    final shapeResult = jsRuntime
-        .evaluate('shapeRecognizer.ProcessGesturesFile(`$shapeFileContent`);');
+    final shapeResult = jsRuntime.evaluate('shapeRecognizer.ProcessGesturesFile(`$shapeFileContent`);');
 
     print('Recognizers initialized successfully');
   }
 
   String pDollarRecognizer(List<Point> points) {
     String pointsAsJson = jsonEncode(points);
-
-    // Call the Recognize function and pass the points array
     final result = jsRuntime.evaluate('recognizer.Recognize($pointsAsJson);');
     return result.stringResult;
   }
 
   String shapeRecognizer(List<Point> points) {
     String pointsAsJson = jsonEncode(points);
-
-    // Call the Recognize function and pass the points array
     final result =
         jsRuntime.evaluate('shapeRecognizer.Recognize($pointsAsJson);');
     return result.stringResult;
   }
 
+  // Calculate the center of the shape
   Offset calculateCenter(List<Point> points) {
     double sumX = 0.0;
     double sumY = 0.0;
@@ -204,6 +154,7 @@ class _DrawingPageState extends State<DrawingPage>
     return Offset(sumX / points.length, sumY / points.length);
   }
 
+  // Calculate average radius of the circle drawn
   double calculateAverageRadius(List<Point> points, Offset center) {
     double sumRad = 0.0;
 
@@ -217,23 +168,7 @@ class _DrawingPageState extends State<DrawingPage>
     return sumRad / points.length;
   }
 
-  List<Offset> rotatePoints(List<Point> points, Offset center) {
-    List<Offset> rotatedPoints = [];
-    for (var p in points) {
-      double translatedX = p.X - center.dx;
-      double translatedY = p.Y - center.dy;
-
-      // Rotate point
-      double rotatedX = translatedX - translatedY ;
-      double rotatedY = translatedX + translatedY ;
-
-      // Translate point back
-      rotatedPoints.add(Offset(rotatedX + center.dx / 2, rotatedY + center.dy / 2));
-    }
-
-    return rotatedPoints;
-  }
-
+  // Generate a circle that is standardized
   List<Offset> generateNormalizedCircle(Offset center, double radius, int numPoints) {
     List<Offset> circlePoints = [];
     for (int i = 0; i < numPoints; i++) {
@@ -246,9 +181,9 @@ class _DrawingPageState extends State<DrawingPage>
     return circlePoints;
   }
 
+  // Generate a triangle that is standardized
   List<Offset> generateNormalizedTriangle(
       Offset center, double size) {
-// Calculate the vertices of the equilateral triangle
     double height = (size * (sqrt(3) / 2)); // Height of the triangle
     List<Offset> vertices = [
       Offset(center.dx, center.dy - height / 2), // Top vertex
@@ -258,12 +193,11 @@ class _DrawingPageState extends State<DrawingPage>
 
     List<Offset> points = [];
 
-    // Calculate the number of points for each side
-    int pointsPerSide = 50; // Split points evenly among 3 sides
+    int pointsPerSide = 50;
 
     // Top edge
     for (int i = 0; i <= pointsPerSide; i++) {
-      double t = i / pointsPerSide; // Normalized value from 0 to 1
+      double t = i / pointsPerSide;
       points.add(Offset(
           vertices[0].dx + (vertices[1].dx - vertices[0].dx) * t,
           vertices[0].dy + (vertices[1].dy - vertices[0].dy) * t
@@ -291,6 +225,7 @@ class _DrawingPageState extends State<DrawingPage>
     return points;
   }
 
+  // Generate a square that is standardized
   List<Offset> generateNormalizedSquarePoints(Offset center, double size) {
     double halfSize = size / 2;
 
@@ -324,6 +259,7 @@ class _DrawingPageState extends State<DrawingPage>
 
   List<String> savedDrawingPaths = [];
 
+  // Save drawing - remove check gesture if saving, keep check gesture if not
   Future<void> _saveDrawing([String? name]) async {
     String drawingName =
         widget.existingDrawingName?.replaceAll(".png", "") ?? '';
@@ -368,7 +304,7 @@ class _DrawingPageState extends State<DrawingPage>
         allStrokes.value.add(temp);
         return;
       }
-    } else {
+    } else { // If editing previously saved drawing, use existing name
       final result = await showDialog<bool>(
           context: context,
           barrierDismissible: false,
@@ -402,6 +338,7 @@ class _DrawingPageState extends State<DrawingPage>
         .findRenderObject() as RenderRepaintBoundary;
     ui.Image image = await boundary.toImage(pixelRatio: 3.0);
 
+    // Save the drawing to the app directory - as image and as json (strokes)
     final byteData = await image.toByteData(format: ui.ImageByteFormat.png);
     final buffer = byteData!.buffer.asUint8List();
     final directory = await getApplicationDocumentsDirectory();
@@ -434,6 +371,7 @@ class _DrawingPageState extends State<DrawingPage>
         });
   }
 
+  // Feedback to confirm that the user wants to save
   Future<bool?> showSaveDialog() async {
     final nameController = TextEditingController();
 
@@ -474,6 +412,7 @@ class _DrawingPageState extends State<DrawingPage>
   double offsetY = 0.0;
   bool scroll = false;
 
+  // Canvas and tool bar
   @override
   Widget build(BuildContext context) {
     final orientation = MediaQuery.of(context).orientation;
@@ -587,7 +526,6 @@ class _DrawingPageState extends State<DrawingPage>
               ),
           ),
           Expanded(
-            // child:AspectRatio(aspectRatio: 1,
               child: SingleChildScrollView(
                   scrollDirection: Axis.horizontal,
                   physics: scroll ? AlwaysScrollableScrollPhysics() : NeverScrollableScrollPhysics(),
@@ -641,6 +579,8 @@ class _DrawingPageState extends State<DrawingPage>
                                 absorbing: scroll,
                               child:
                               GestureDetector(
+                                onLongPress: () {allStrokes.value.removeLast();}
+                                  ,
                                   onDoubleTap: () async {
                                 final strokeCount = allStrokes.value.length;
                                 allStrokes.value
@@ -711,10 +651,6 @@ class _DrawingPageState extends State<DrawingPage>
                                       Offset center = calculateCenter(lastPoints);
                                       List<Offset> normalizedTriangle = generateNormalizedTriangle(center, 100);
                                       allStrokes.value.last.points = normalizedTriangle;
-                                      // Offset center = calculateCenter(lastPoints);
-                                      // double averageRadius = calculateAverageRadius(lastPoints, center);
-                                      // List<Offset> normalizedCircle = generateNormalizedCircle(center, averageRadius, 200);
-                                      // allStrokes.value.last.points = normalizedCircle;
                                     }
                                   } else if (recognizedShape == "square"){
                                     final convert = await showDialog<bool>(
@@ -742,10 +678,6 @@ class _DrawingPageState extends State<DrawingPage>
                                       Offset center = calculateCenter(lastPoints);
                                       List<Offset> normalizedSquare = generateNormalizedSquarePoints(center, 100); // You can choose your size
                                       allStrokes.value.last.points = normalizedSquare;
-                                      // Offset center = calculateCenter(lastPoints);
-                                      // double averageRadius = calculateAverageRadius(lastPoints, center);
-                                      // List<Offset> normalizedCircle = generateNormalizedCircle(center, averageRadius, 200);
-                                      // allStrokes.value.last.points = normalizedCircle;
                                     }
                                   }
                                   else {
@@ -754,11 +686,11 @@ class _DrawingPageState extends State<DrawingPage>
                                       builder: (context) => AlertDialog(
                                       // title: Text("$recognizedShape")),
                                           title: Text("No shape recognized")),
+
                                     );
                                   }
                                 }
                                 setState(() {
-
                                 });
                               },
                                   onPanStart: (details) {
@@ -793,7 +725,6 @@ class _DrawingPageState extends State<DrawingPage>
                               }),
                               )],
                           )))))
-          // )
     ],
       ),
     );
