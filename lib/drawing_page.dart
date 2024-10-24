@@ -95,7 +95,6 @@ class _DrawingPageState extends State<DrawingPage>
   late JavascriptRuntime jsRuntime;
   String jsCode = ' ';
 
-
   @override
   void initState() {
     super.initState();
@@ -123,7 +122,6 @@ class _DrawingPageState extends State<DrawingPage>
 
     // Call the Recognize function and pass the points array
     final result = jsRuntime.evaluate('recognizer.Recognize($pointsAsJson);');
-    print(result.stringResult);
     return result.stringResult;
   }
 
@@ -134,15 +132,12 @@ class _DrawingPageState extends State<DrawingPage>
       });
   }
 
-  void showSnackBar() {
-    final snackBar = SnackBar(content: Text('Check mark recognized!'));
-    ScaffoldMessenger.of(context).showSnackBar(snackBar);
-  }
-
   List<String> savedDrawingPaths = [];
 
   Future<void> _saveDrawing([String? name]) async {
     String drawingName = widget.existingDrawingName?.replaceAll(".png", "") ?? '';
+    final temp = allStrokes.value.last;
+    allStrokes.value.removeLast();
 
     if (drawingName.isEmpty) {
       final nameController = TextEditingController();
@@ -165,6 +160,7 @@ class _DrawingPageState extends State<DrawingPage>
       if (name != null) {
         drawingName = name;
       } else {
+        allStrokes.value.add(temp);
         return;
       }
     } else {
@@ -182,6 +178,7 @@ class _DrawingPageState extends State<DrawingPage>
           });
 
       if (result == false) {
+        allStrokes.value.add(temp);
         return;
       }
     }
@@ -405,6 +402,23 @@ class _DrawingPageState extends State<DrawingPage>
                   ),
                 ),
                 GestureDetector(
+                  onDoubleTap: () {
+                      final strokeCount = allStrokes.value.length;
+                      allStrokes.value.removeRange(strokeCount - 2, strokeCount);
+                      showDialog(
+                        context: context,
+                        builder: (context) => AlertDialog(
+                          title: Text("Double tap Detected"),
+                          content: Text("strokeCount"),
+                          actions: [
+                            TextButton(
+                              onPressed: () => Navigator.of(context).pop(),
+                              child: Text("OK"),
+                            ),
+                          ],
+                        ),
+                      );
+                  },
                   onPanStart: (details) {
                     _points.clear();
                     _points.add(Point(details.localPosition.dx, details.localPosition.dy, 0));
@@ -428,6 +442,7 @@ class _DrawingPageState extends State<DrawingPage>
                         await _saveDrawing();
                       }
                     }
+
                     _currentPointerPosition = null;
 
                     setState(() {
