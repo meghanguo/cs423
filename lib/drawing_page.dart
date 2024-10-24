@@ -175,9 +175,8 @@ class _DrawingPageState extends State<DrawingPage>
   List<Offset> generatePerfectCircle(
       Offset center, double radius, int numPoints) {
     List<Offset> circlePoints = [];
-    double angle = (2 * pi) / numPoints;
     for (int i = 0; i < numPoints; i++) {
-      double currAngle = i * angle;
+      double currAngle =  2 * pi * i / numPoints;
       double x = center.dx + radius * cos(currAngle);
       double y = center.dy + radius * sin(currAngle);
       circlePoints.add(Offset(x, y));
@@ -340,13 +339,16 @@ class _DrawingPageState extends State<DrawingPage>
 
   @override
   Widget build(BuildContext context) {
+    final orientation = MediaQuery.of(context).orientation;
+    double containerHeight = orientation == Orientation.landscape ? 80 : 120;
+
     return Scaffold(
       body: Column(
         children: [
           Container(
               color: Theme.of(context).colorScheme.inversePrimary,
               padding: EdgeInsets.only(bottom: 5.0),
-              height: 170,
+              height: containerHeight,
               child: Row(
                 crossAxisAlignment: CrossAxisAlignment.end,
                 children: [
@@ -360,26 +362,32 @@ class _DrawingPageState extends State<DrawingPage>
                   ValueListenableBuilder<DrawingTool>(
                       valueListenable: drawingTool,
                       builder: (context, tool, child) {
-                        return _IconBox(
+                        return Opacity(opacity: scroll ? 0.5 : 1.0,
+                        child: _IconBox(
                             iconData: FontAwesomeIcons.pencil,
                             selected: tool == DrawingTool.pencil,
                             onTap: () {
-                              drawingTool.value = DrawingTool.pencil;
-                              setState(() {});
+                              if (!scroll) {
+                                drawingTool.value = DrawingTool.pencil;
+                                setState(() {});
+                              }
                             },
-                            tooltip: 'Pencil');
+                            tooltip: 'Pencil'));
                       }),
                   ValueListenableBuilder<DrawingTool>(
                       valueListenable: drawingTool,
                       builder: (context, tool, child) {
-                        return _IconBox(
+                        return Opacity(opacity: scroll ? 0.5 : 1.0,
+                        child: _IconBox(
                             iconData: FontAwesomeIcons.eraser,
                             selected: tool == DrawingTool.eraser,
                             onTap: () {
-                              drawingTool.value = DrawingTool.eraser;
-                              setState(() {});
+                              if (!scroll) {
+                                drawingTool.value = DrawingTool.eraser;
+                                setState(() {});
+                              }
                             },
-                            tooltip: 'Eraser');
+                            tooltip: 'Eraser'));
                       }),
                   // ValueListenableBuilder<DrawingTool>(
                   //     valueListenable: drawingTool,
@@ -499,6 +507,7 @@ class _DrawingPageState extends State<DrawingPage>
               // )
           ),
           Expanded(
+            // child:AspectRatio(aspectRatio: 1,
               child: SingleChildScrollView(
                   scrollDirection: Axis.horizontal,
                   physics: scroll ? AlwaysScrollableScrollPhysics() : NeverScrollableScrollPhysics(),
@@ -618,7 +627,8 @@ class _DrawingPageState extends State<DrawingPage>
                               }),
                               )],
                           )))))
-        ],
+          // )
+    ],
       ),
     );
   }
