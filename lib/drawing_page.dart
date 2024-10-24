@@ -405,19 +405,33 @@ class _DrawingPageState extends State<DrawingPage>
                   onDoubleTap: () {
                       final strokeCount = allStrokes.value.length;
                       allStrokes.value.removeRange(strokeCount - 2, strokeCount);
-                      showDialog(
-                        context: context,
-                        builder: (context) => AlertDialog(
-                          title: Text("Double tap Detected"),
-                          content: Text("strokeCount"),
-                          actions: [
-                            TextButton(
-                              onPressed: () => Navigator.of(context).pop(),
-                              child: Text("OK"),
-                            ),
-                          ],
-                        ),
-                      );
+                      if (strokeCount - 2 >= 1) {
+                        final lastStroke = allStrokes.value.last.points;
+                        List<Point> lastPoints = lastStroke.map((offset) => Point(offset.dx, offset.dy, 0)).toList();
+
+                        String recognizedShape = pDollarRecognizer(lastPoints);
+                        String shapeName = pDollarRecognizer(_points);
+
+                        if (shapeName == "checkmark") {
+                          showDialog<void>(
+                              context: context,
+                              barrierDismissible: true,
+                              builder: (BuildContext context) {
+                                return AlertDialog(
+                                  title: const Text('check recognized'),
+                                  content: const Text('Your drawing has been successfully saved.'),
+                                  actions: <Widget>[
+                                    TextButton(
+                                      onPressed: () {
+                                        Navigator.of(context).pop(); // Close the dialog
+                                      },
+                                      child: const Text('OK'),
+                                    ),
+                                  ],
+                                );}
+                          );
+                        }
+                      }
                   },
                   onPanStart: (details) {
                     _points.clear();

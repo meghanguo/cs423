@@ -195,20 +195,18 @@ class _MyHomePageState extends State<MyHomePage> {
 
   // load saved drawing and allow user to edit these drawings
   Future<List<Stroke>> _loadStrokesFromFile(String path) async {
-    await showDialog(context: context,
+    await showDialog<void> (context: context,
+        barrierDismissible: false,
         builder: (BuildContext context){
+      Future.delayed(const Duration(milliseconds: 500), () {
+        Navigator.of(context).pop();
+      });
       return AlertDialog(
         title: Text("Opening drawing"),
-        actions: <Widget>[
-          TextButton(
-            onPressed: () {
-              Navigator.of(context).pop();
-            },
-            child: const Text("OK"),
-          )
-        ],
+        content: Text("Please wait..."),
       );
         });
+
     String fileName = p.basenameWithoutExtension(path);
     final drawing = File(p.join(p.dirname(path), '$fileName.json'));
     if (await drawing.exists()) {
