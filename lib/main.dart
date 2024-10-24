@@ -9,6 +9,7 @@ import 'package:painting_app_423/stroke.dart';
 import 'package:flutter_js/flutter_js.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:path/path.dart' as p;
+import 'package:shared_preferences/shared_preferences.dart';
 
 void main() {
   runApp(const MyApp());
@@ -96,6 +97,7 @@ class _MyHomePageState extends State<MyHomePage> {
         savedDrawings.add({
           'name': name,
           'strokes': strokes.map((stroke) => stroke.toJson()).toList(),
+          'favorite': false,
         });
       });
     }
@@ -105,6 +107,7 @@ class _MyHomePageState extends State<MyHomePage> {
         savedDrawings.add({
           'name': name,
           'strokes': strokes.map((stroke) => stroke.toJson()).toList(),
+          'favorite': false,
         });
       });
     }
@@ -166,12 +169,16 @@ class _MyHomePageState extends State<MyHomePage> {
     final drawings = await directory.list().toList();
 
     List<Map<String, dynamic>> loadedDrawings = [];
+    SharedPreferences preferences = await SharedPreferences.getInstance();
 
     for (var drawing in drawings) {
       if (drawing is File && (drawing.path.endsWith('png'))) {
+        String imageName = drawing.uri.pathSegments.last;
+        bool favorite = preferences.getBool(imageName) ?? false;
         loadedDrawings.add({
-          'name': drawing.uri.pathSegments.last,
+          'name': imageName,
           'path': drawing.path,
+          'favorite': favorite,
         });
       }
       setState(() {savedDrawings = loadedDrawings;});
@@ -241,8 +248,25 @@ class _MyHomePageState extends State<MyHomePage> {
     }
   }
 
+  void toggleFavorite(String name) {
+    setState(() {
+      final drawing = savedDrawings.firstWhere((drawing) => drawing['name'] == name);
+      drawing['favorite'] = drawing['favorite'] ?? false;
+      drawing['favorite'] = !drawing['favorite'];
+
+      SharedPreferences.getInstance().then((preferences) {
+        preferences.setBool(name, drawing['favorite']);
+      });
+
+      savedDrawings.sort((a, b) => (b['favorite'] ? 1 : 0).compareTo(a['favorite'] ? 1 : 0));
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
+    List<Map<String, dynamic>> sortedDrawings = List.from(savedDrawings);
+    sortedDrawings.sort((a, b) => (b['favorite'] ? 1 : 0).compareTo(a['favorite'] ? 1 : 0));
+
     return Scaffold(
       appBar: AppBar(
         backgroundColor: Theme.of(context).colorScheme.inversePrimary,
@@ -256,7 +280,7 @@ class _MyHomePageState extends State<MyHomePage> {
             itemBuilder: (context, index) {
               return GestureDetector(
                 onTap: () async {
-                  List<Stroke> strokes = await _loadStrokesFromFile(savedDrawings[index]['path']);
+                  List<Stroke> strokes = await _loadStrokesFromFile(sortedDrawings[index]['path']);
 
                   await Navigator.push(context,
                     MaterialPageRoute(builder: (context) => DrawingPage(
@@ -280,6 +304,12 @@ class _MyHomePageState extends State<MyHomePage> {
                     savedDrawings[index]['name'],
                     style: TextStyle(color: Colors.black),
                     textAlign: TextAlign.center,
+                  ),
+                  leading: IconButton(onPressed: () => toggleFavorite(sortedDrawings[index]['name']),
+                    icon: Icon(
+                      sortedDrawings[index]['favorite'] ? Icons.star : Icons.star_border,
+                      color: sortedDrawings[index]['favorite'] ? Colors.yellow : Colors.grey,
+                    ),
                   ),
                   trailing: IconButton(
                     icon:Icon(Icons.delete, color: Colors.red,),
