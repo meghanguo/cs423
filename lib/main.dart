@@ -64,8 +64,8 @@ class _MyHomePageState extends State<MyHomePage> {
   late JavascriptRuntime jsRuntime;
   String jsCode = ' ';
 
-  late PageController _pageController;
-  int drawingsPerPage = 8;
+  int drawingsPerPage = 6;
+  int currentPageIndex = 0;
 
   @override
   void initState() {
@@ -73,7 +73,6 @@ class _MyHomePageState extends State<MyHomePage> {
     loadJs();
     jsRuntime = getJavascriptRuntime();
     _loadDrawings();
-    _pageController = PageController();
   }
 
   Future<void> loadJs() async {
@@ -95,26 +94,27 @@ class _MyHomePageState extends State<MyHomePage> {
   }
 
   void addDrawing(String name, List<Stroke> strokes) {
-    bool exists = savedDrawings.any((drawing) => drawing['name'] == name);
-    if (!exists) {
-      setState(() {
+    setState(() {
+      // Check if the drawing already exists
+      int existingIndex = savedDrawings.indexWhere((drawing) => drawing['name'] == name);
+
+      if (existingIndex != -1) {
+        // Preserve the favorite status and update the strokes
+        bool isFavorite = savedDrawings[existingIndex]['favorite'];
+        savedDrawings[existingIndex] = {
+          'name': name,
+          'strokes': strokes.map((stroke) => stroke.toJson()).toList(),
+          'favorite': isFavorite, // Preserve favorite status
+        };
+      } else {
+        // Add new drawing with default favorite status
         savedDrawings.add({
           'name': name,
           'strokes': strokes.map((stroke) => stroke.toJson()).toList(),
-          'favorite': false,
+          'favorite': false, // Default favorite status for new drawings
         });
-      });
-    }
-    else {
-      savedDrawings.removeWhere((drawing) => drawing['name'] == name);
-      setState(() {
-        savedDrawings.add({
-          'name': name,
-          'strokes': strokes.map((stroke) => stroke.toJson()).toList(),
-          'favorite': false,
-        });
-      });
-    }
+      }
+    });
   }
 
   Future<void> _openNewDrawingScreen() async {
@@ -185,6 +185,8 @@ class _MyHomePageState extends State<MyHomePage> {
           'favorite': favorite,
         });
       }
+
+      loadedDrawings.sort((a, b) => (b['favorite'] ? 1 : 0).compareTo(a['favorite'] ? 1 : 0));
       setState(() {savedDrawings = loadedDrawings;});
     }
   }
@@ -255,7 +257,6 @@ class _MyHomePageState extends State<MyHomePage> {
   void toggleFavorite(String name) {
     setState(() {
       final drawing = savedDrawings.firstWhere((drawing) => drawing['name'] == name);
-      drawing['favorite'] = drawing['favorite'] ?? false;
       drawing['favorite'] = !drawing['favorite'];
 
       SharedPreferences.getInstance().then((preferences) {
@@ -316,9 +317,7 @@ class _MyHomePageState extends State<MyHomePage> {
 
   @override
   Widget build(BuildContext context) {
-    List<Map<String, dynamic>> sortedDrawings = List.from(savedDrawings);
-    sortedDrawings.sort((a, b) => (b['favorite'] ? 1 : 0).compareTo(a['favorite'] ? 1 : 0));
-    List<List<Map<String, dynamic>>> pages = _getPages(sortedDrawings);
+    List<List<Map<String, dynamic>>> pages = _getPages(savedDrawings);
 
     return Scaffold(
       appBar: AppBar(
@@ -354,59 +353,41 @@ class _MyHomePageState extends State<MyHomePage> {
 
                 // recognize for 1 stroke plus signs
                 if (_points.isNotEmpty) {
-                  await showDialog(
-                    context: context,
-                    builder: (BuildContext context) {
-                      return AlertDialog(
-                        title: Text("gesture"),
-                        actions: <Widget>[
-                          TextButton(
-                            child: Text("OK"),
-                            onPressed: () {
-                              Navigator.of(context).pop();
-                            },
-                          )
-                        ],
-                      );
-                    },
-                  );
                   String gestureName = pDollarRecognizer(_points);
                   if (gestureName == "plus") {
                     print("in one stroke");
                     print("gesture name: " + gestureName);
                     _points.clear();
                     _openNewDrawingScreen();
-                  } else if (gestureName == "star") {
-                    await showDialog(
-                      context: context,
-                      builder: (BuildContext context) {
-                        return AlertDialog(
-                          title: Text("Favorite"),
-                          actions: <Widget>[
-                            TextButton(
-                              child: Text("OK"),
-                              onPressed: () {
-                                Navigator.of(context).pop();
-                              },
-                            )
-                          ],
-                        );
-                      },
-                    );
+                  } else if (gestureName == "star" || gestureName == "heart") {
                     print("in one stroke");
                     print("gesture name: " + gestureName);
-                    _points.clear();
+
                     double endX = _points.last.X;
                     double endY = _points.last.Y;
 
                     List<Map<String, dynamic>> drawingPositions = getDrawingPositions();
 
-                    for (var drawing in sortedDrawings) {
-                      if (isDrawing(endX, endY, drawingPositions)) {
-                        toggleFavorite(drawing['name']);
-                        break;
-                      }
+                    if (!isDrawing(endX, endY, drawingPositions)) {
+                      await showDialog(
+                        context: context,
+                        builder: (BuildContext context) {
+                          return AlertDialog(
+                            title: Text("Error"),
+                            actions: <Widget>[
+                              TextButton(
+                                child: Text("No drawing favorited"),
+                                onPressed: () {
+                                  Navigator.of(context).pop();
+                                },
+                              )
+                            ],
+                          );
+                        },
+                      );
                     }
+
+                    _points.clear();
                   }
                 }
 
@@ -414,21 +395,24 @@ class _MyHomePageState extends State<MyHomePage> {
                 firstStroke = false;
               }
             },
-            child: PageView.builder(controller: _pageController, itemCount: pages.length, itemBuilder: (context, pageIndex) {
-              return GridView.builder(
+            child: Column (
+              children:[
+                Expanded( child: GridView.builder(
                 physics: NeverScrollableScrollPhysics(),
                 gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(crossAxisCount: 2, childAspectRatio: 1, crossAxisSpacing: 4, mainAxisSpacing: 4,),
-                itemCount: savedDrawings.length,
+                itemCount: pages[currentPageIndex].length,
                 itemBuilder: (context, index) {
+                  final drawing = pages[currentPageIndex][index];
+
                   return GestureDetector(
                       onTap: () async {
-                        List<Stroke> strokes = await _loadStrokesFromFile(sortedDrawings[index]['path']);
+                        List<Stroke> strokes = await _loadStrokesFromFile(drawing['path']);
 
                         await Navigator.push(context,
                           MaterialPageRoute(builder: (context) => DrawingPage(
                             onSave: addDrawing,
                             strokes: strokes,
-                            existingDrawingName: savedDrawings[index]['name'],
+                            existingDrawingName: drawing['name'],
                           ),
                           ),
                         );
@@ -437,34 +421,49 @@ class _MyHomePageState extends State<MyHomePage> {
                       child:
                       GridTile(
                         child: Image.file(
-                          File(savedDrawings[index]['path']),
+                          File(drawing['path']),
                           fit: BoxFit.cover,
                         ),
                         footer: GridTileBar(
                           backgroundColor: Colors.white,
                           title: Text(
-                            savedDrawings[index]['name'],
+                            drawing['name'],
                             style: TextStyle(color: Colors.black),
                             textAlign: TextAlign.center,
                           ),
-                          leading: IconButton(onPressed: () => toggleFavorite(sortedDrawings[index]['name']),
+                          leading: IconButton(onPressed: () => toggleFavorite(drawing['name']),
                             icon: Icon(
-                              sortedDrawings[index]['favorite'] ? Icons.star : Icons.star_border,
-                              color: sortedDrawings[index]['favorite'] ? Colors.yellow : Colors.grey,
+                              drawing['favorite'] ? Icons.star : Icons.star_border,
+                              color: drawing['favorite'] ? Colors.yellow : Colors.grey,
                             ),
                           ),
                           trailing: IconButton(
                             icon:Icon(Icons.delete, color: Colors.red,),
-                            onPressed: () async {_confirmDeleteDrawing(savedDrawings[index]['path'], savedDrawings[index]['name']);},
+                            onPressed: () async {_confirmDeleteDrawing(drawing['path'], drawing['name']);},
                           ),
                         ),
                       ));
                 },
-              );
-            },)
+              ),),
+    SizedBox(height: 10,),
+    Padding(padding: const EdgeInsets.only(left: 10.0, right: 10.0, bottom: 30.0),
+    child:
+    Row(
+    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+    children: [
+      ElevatedButton(onPressed: currentPageIndex > 0 ? () {setState(() {
+        currentPageIndex--;
+      }); } : null, child: Text('Previous')),
+    Text('Page ${currentPageIndex + 1} of ${pages.length}'),
+    ElevatedButton(onPressed: currentPageIndex < pages.length - 1 ? () {setState(() {
+    currentPageIndex++;
+    }); } : null, child: Text('Next'),
+    )
+    ],
+    ))
+    ])
+    ),]
           ),
-        ],
-      ),
     );
   }
 }
