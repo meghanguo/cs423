@@ -114,7 +114,8 @@ class NormalStroke extends Stroke {
 
 enum StrokeType {
   normal,
-  eraser;
+  eraser,
+  scroll;
 
   static StrokeType fromString(String value) {
     switch (value) {
@@ -122,6 +123,8 @@ enum StrokeType {
         return StrokeType.normal;
       case 'eraser':
         return StrokeType.eraser;
+      case 'scroll':
+        return StrokeType.scroll;
       default:
         return StrokeType.normal;
     }
@@ -134,6 +137,8 @@ enum StrokeType {
         return 'normal';
       case StrokeType.eraser:
         return 'eraser';
+      case StrokeType.scroll:
+        return 'scroll';
     }
   }
 }

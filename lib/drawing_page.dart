@@ -147,14 +147,6 @@ class _DrawingPageState extends State<DrawingPage>
     return result.stringResult;
   }
 
-  void onPanUpdate(DragUpdateDetails details) {
-    setState(() {
-      _points.add(Point(details.localPosition.dx, details.localPosition.dy, 0));
-      _currentPointerPosition =
-          Offset(details.localPosition.dx, details.localPosition.dy);
-    });
-  }
-
   Offset calculateCenter(List<Point> points) {
     double sumX = 0.0;
     double sumY = 0.0;
@@ -344,37 +336,11 @@ class _DrawingPageState extends State<DrawingPage>
   double canvasSize = 100;
   double offsetX = 0.0;
   double offsetY = 0.0;
-  bool scrolling = false;
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-        body: GestureDetector(
-      onScaleStart: (details) {
-        if (details.pointerCount > 1) {
-          setState(() {
-            scrolling = true;
-            offsetX = details.focalPoint.dx;
-            offsetY = details.focalPoint.dy;
-          });
-        }
-      },
-      onScaleUpdate: (details) {
-        if (details.pointerCount > 1) {
-          setState(() {
-            offsetX += details.focalPoint.dx - offsetX;
-            offsetY += details.focalPoint.dy - offsetY;
-          });
-        }
-      },
-      onScaleEnd: (details) {
-        if (details.pointerCount > 1) {
-          setState(() {
-            scrolling = false;
-          });
-        }
-      },
-      child: Column(
+      body: Column(
         children: [
           Container(
               color: Theme.of(context).colorScheme.inversePrimary,
@@ -409,6 +375,18 @@ class _DrawingPageState extends State<DrawingPage>
                               setState(() {});
                             },
                             tooltip: 'Eraser');
+                      }),
+                  ValueListenableBuilder<DrawingTool>(
+                      valueListenable: drawingTool,
+                      builder: (context, tool, child) {
+                        return _IconBox(
+                            iconData: FontAwesomeIcons.hand,
+                            selected: tool == DrawingTool.scroll,
+                            onTap: () {
+                              drawingTool.value = DrawingTool.scroll;
+                              setState(() {});
+                            },
+                            tooltip: 'Scroll');
                       }),
                   SizedBox(width: 15),
                   Expanded(
@@ -470,107 +448,126 @@ class _DrawingPageState extends State<DrawingPage>
                 ],
               )),
           Expanded(
-              child: Stack(
-            children: [
-              AnimatedBuilder(
-                animation: Listenable.merge([
-                  currentStroke,
-                  allStrokes,
-                  selectedColor,
-                  strokeSize,
-                  eraserSize,
-                  drawingTool
-                ]),
-                builder: (context, _) {
-                  return DrawingCanvas(
-                      options: DrawingCanvasOptions(
-                          currentTool: drawingTool.value,
-                          size: drawingTool.value == DrawingTool.eraser
-                              ? eraserSize.value
-                              : strokeSize.value,
-                          strokeColor: selectedColor.value,
-                          backgroundColor: Colors.white),
-                      canvasKey: canvasGlobalKey,
-                      currentStrokeListenable: currentStroke,
-                      strokesListenable: allStrokes);
-                },
-              ),
-              if (_currentPointerPosition != null)
-                Positioned(
-                  left: _currentPointerPosition!.dx - 17,
-                  top: _currentPointerPosition!.dy - 17,
-                  child: Container(
-                    width: 10,
-                    height: 10,
-                    decoration: BoxDecoration(
-                      border: Border.all(color: Colors.black, width: 2),
-                      shape: BoxShape.circle,
-                    ),
-                  ),
-                ),
-              GestureDetector(onDoubleTap: () {
-                final strokeCount = allStrokes.value.length;
-                allStrokes.value.removeRange(strokeCount - 2, strokeCount);
-                if (strokeCount - 2 > 0) {
-                  final lastStroke = allStrokes.value.last.points;
-                  List<Point> lastPoints = lastStroke
-                      .map((offset) => Point(offset.dx, offset.dy, 0))
-                      .toList();
-                  String recognizedShape = shapeRecognizer(lastPoints);
+              child: SingleChildScrollView(
+                  scrollDirection: Axis.horizontal,
+                  child: SingleChildScrollView(
+                      scrollDirection: Axis.vertical,
+                      child: Container(
+                          width: 1000,
+                          height: 1000,
+                          child: Stack(
+                            children: [
+                              AnimatedBuilder(
+                                animation: Listenable.merge([
+                                  currentStroke,
+                                  allStrokes,
+                                  selectedColor,
+                                  strokeSize,
+                                  eraserSize,
+                                  drawingTool
+                                ]),
+                                builder: (context, _) {
+                                  return DrawingCanvas(
+                                      options: DrawingCanvasOptions(
+                                          currentTool: drawingTool.value,
+                                          size: drawingTool.value ==
+                                                  DrawingTool.eraser
+                                              ? eraserSize.value
+                                              : strokeSize.value,
+                                          strokeColor: selectedColor.value,
+                                          backgroundColor: Colors.white,),
+                                      canvasKey: canvasGlobalKey,
+                                      currentStrokeListenable: currentStroke,
+                                      strokesListenable: allStrokes);
+                                },
+                              ),
+                              if (_currentPointerPosition != null)
+                                Positioned(
+                                  left: _currentPointerPosition!.dx - 17,
+                                  top: _currentPointerPosition!.dy - 17,
+                                  child: Container(
+                                    width: 10,
+                                    height: 10,
+                                    decoration: BoxDecoration(
+                                      border: Border.all(
+                                          color: Colors.black, width: 2),
+                                      shape: BoxShape.circle,
+                                    ),
+                                  ),
+                                ),
+                              GestureDetector(
+                                  onDoubleTap: () {
+                                final strokeCount = allStrokes.value.length;
+                                allStrokes.value
+                                    .removeRange(strokeCount - 2, strokeCount);
+                                if (strokeCount - 2 > 0) {
+                                  final lastStroke =
+                                      allStrokes.value.last.points;
+                                  List<Point> lastPoints = lastStroke
+                                      .map((offset) =>
+                                          Point(offset.dx, offset.dy, 0))
+                                      .toList();
+                                  String recognizedShape =
+                                      shapeRecognizer(lastPoints);
 
-                  if (recognizedShape == "circle") {
-                    Offset center = calculateCenter(lastPoints);
-                    double averageRadius =
-                        calculateAverageRadius(lastPoints, center);
-                    List<Offset> normalizedCircle =
-                        generatePerfectCircle(center, averageRadius, 200);
-                    allStrokes.value.last.points = normalizedCircle;
-                  } else {
-                    showDialog(
-                      context: context,
-                      builder: (context) =>
-                          AlertDialog(title: Text("No shape recognized")),
-                    );
-                  }
-                }
-              }, onPanStart: (details) {
-                if (!scrolling) {
-                  _points.clear();
-                  _points.add(Point(
-                      details.localPosition.dx, details.localPosition.dy, 0));
+                                  if (recognizedShape == "circle") {
+                                    Offset center = calculateCenter(lastPoints);
+                                    double averageRadius =
+                                        calculateAverageRadius(
+                                            lastPoints, center);
+                                    List<Offset> normalizedCircle =
+                                        generatePerfectCircle(
+                                            center, averageRadius, 200);
+                                    allStrokes.value.last.points =
+                                        normalizedCircle;
+                                  } else {
+                                    showDialog(
+                                      context: context,
+                                      builder: (context) => AlertDialog(
+                                          title: Text("No shape recognized")),
+                                    );
+                                  }
+                                }
+                              },
+                                  onPanStart: (details) {
+                                    if (drawingTool.value != DrawingTool.scroll) {
+                                      _points.clear();
+                                      _points.add(Point(details.localPosition.dx,
+                                          details.localPosition.dy, 0));
+                                      _currentPointerPosition =
+                                          details.localPosition;
+                                    }
+                                  setState(() {
 
-                  setState(() {
-                    _currentPointerPosition = details.localPosition;
-                  });
-                }
-              }, onPanUpdate: (details) {
-                if (!scrolling) {
-                  setState(() {
-                    _points.add(Point(
-                        details.localPosition.dx, details.localPosition.dy, 0));
-                    _currentPointerPosition = details.localPosition;
-                  });
-                }
-              }, onPanEnd: (details) async {
-                if (!scrolling) {
-                  if (drawingTool.value != DrawingTool.eraser &&
-                      _points.isNotEmpty) {
-                    String gestureName = pDollarRecognizer(_points);
-                    if (gestureName == "checkmark" || gestureName == "s") {
-                      print("gesture name:" + gestureName);
-                      await _saveDrawing();
-                    }
-                  }
+                                  });
+                              }, onPanUpdate: (details) {
+                                    if (drawingTool.value != DrawingTool.scroll) {
+                                        _points.add(Point(details.localPosition.dx,
+                                            details.localPosition.dy, 0));
+                                        _currentPointerPosition =
+                                            details.localPosition;
+                                    }
+                                    setState(() {
+                                    });
+                              }, onPanEnd: (details) async {
+                                  if (drawingTool.value != DrawingTool.eraser &&
+                                      _points.isNotEmpty) {
+                                    String gestureName =
+                                        pDollarRecognizer(_points);
+                                    if (gestureName == "checkmark" ||
+                                        gestureName == "s") {
+                                      print("gesture name:" + gestureName);
+                                      await _saveDrawing();
+                                    }
+                                    _currentPointerPosition = null;
 
-                  _currentPointerPosition = null;
-
-                  setState(() {});
-                }
-              })
-            ],
-          ))
+                                  setState(() {});
+                                }
+                              }),
+                            ],
+                          )))))
         ],
       ),
-    ));
+    );
   }
 }
