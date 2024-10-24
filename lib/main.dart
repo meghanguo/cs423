@@ -178,6 +178,7 @@ class _MyHomePageState extends State<MyHomePage> {
     }
   }
 
+  // load saved drawing and allow user to edit these drawings
   Future<List<Stroke>> _loadStrokesFromFile(String path) async {
     await showDialog(context: context,
         builder: (BuildContext context){
@@ -224,6 +225,7 @@ class _MyHomePageState extends State<MyHomePage> {
                     MaterialPageRoute(builder: (context) => DrawingPage(
                       onSave: addDrawing,
                       strokes: strokes,
+                      existingDrawingName: savedDrawings[index]['name'],
                     ),
                     ),
                   );

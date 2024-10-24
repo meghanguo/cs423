@@ -75,6 +75,8 @@ class _DrawingCanvasState extends State<DrawingCanvas> {
 
     if (!_currentStroke.hasStroke) return;
     _strokes.value = List<Stroke>.from(_strokes.value)..add(_currentStroke.value!);
+    widget.strokesListenable.value = List<Stroke>.from(_strokes.value);
+
     print('Pointer Up: Added stroke with ${_currentStroke.value}');
     _currentStroke.clear();
     widget.onDrawingStrokeChanged?.call(null);

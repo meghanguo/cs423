@@ -68,8 +68,9 @@ class _IconBox extends StatelessWidget {
 class DrawingPage extends StatefulWidget {
   final Function(String, List<Stroke>) onSave;
   final List<Stroke>? strokes; // Accept saved strokes
+  final String? existingDrawingName;
 
-  const DrawingPage({super.key, required this.onSave, this.strokes});
+  const DrawingPage({super.key, required this.onSave, this.strokes, this.existingDrawingName});
 
   @override
   _DrawingPageState createState() => _DrawingPageState();
@@ -140,24 +141,68 @@ class _DrawingPageState extends State<DrawingPage>
 
   List<String> savedDrawingPaths = [];
 
-  Future<void> _saveDrawing(name) async {
+  Future<void> _saveDrawing([String? name]) async {
+    String drawingName = widget.existingDrawingName?.replaceAll(".png", "") ?? '';
+
+    if (drawingName.isEmpty) {
+      final nameController = TextEditingController();
+      final name = await showDialog<String>(context: context,
+          barrierDismissible: false,
+          builder: (BuildContext context) {
+        return AlertDialog(
+          title: Text("Save Drawing"),
+          content: TextField(
+            controller: nameController,
+            decoration: const InputDecoration(hintText: 'Enter drawing name'),
+          ),
+          actions: <Widget>[
+            TextButton(onPressed:() {Navigator.of(context).pop(null);}, child: const Text('Cancel')),
+            TextButton(onPressed:() {if(nameController.text.isNotEmpty) {Navigator.of(context).pop(nameController.text);};}, child: const Text("Save"),
+            )],
+        );
+          });
+
+      if (name != null) {
+        drawingName = name;
+      } else {
+        return;
+      }
+    } else {
+      final result = await showDialog<bool>(context: context,
+          barrierDismissible: false,
+          builder: (BuildContext context) {
+            return AlertDialog(
+              title: Text("Save Drawing"),
+              content: Text('Save current drawing as "$drawingName"'),
+              actions: <Widget>[
+                TextButton(onPressed:() {Navigator.of(context).pop(false);}, child: const Text('Cancel')),
+                TextButton(onPressed:() {Navigator.of(context).pop(true);}, child: const Text("Save"),
+                )],
+            );
+          });
+
+      if (result == false) {
+        return;
+      }
+    }
+
       RenderRepaintBoundary boundary = canvasGlobalKey.currentContext!.findRenderObject() as RenderRepaintBoundary;
       ui.Image image = await boundary.toImage(pixelRatio: 3.0);
 
       final byteData = await image.toByteData(format: ui.ImageByteFormat.png);
       final buffer = byteData!.buffer.asUint8List();
       final directory = await getApplicationDocumentsDirectory();
-      final filePath = '${directory.path}/${name}.png';
+      final filePath = '${directory.path}/${drawingName}2.png';
       final file = File(filePath);
       await file.writeAsBytes(buffer);
 
-      final strokePath = '${directory.path}/${name}.json';
+      final strokePath = '${directory.path}/${drawingName}2.json';
       final strokesJson = jsonEncode(allStrokes.value.map((stroke) => stroke.toJson()).toList());
       await File(strokePath).writeAsString(strokesJson);
 
       return showDialog<void>(
           context: context,
-          barrierDismissible: true, // User must tap button
+          barrierDismissible: true,
           builder: (BuildContext context) {
             return AlertDialog(
                 title: const Text('Drawing Saved'),
@@ -175,7 +220,6 @@ class _DrawingPageState extends State<DrawingPage>
       );
   }
 
-  // Method to show save prompt
   Future<bool?> showSaveDialog() async {
     final nameController = TextEditingController();
 
@@ -381,7 +425,7 @@ class _DrawingPageState extends State<DrawingPage>
                       String gestureName = pDollarRecognizer(_points);
                       if (gestureName   == "checkmark" || gestureName == "s") {
                         print("gesture name:" + gestureName);
-                        showSaveDialog();
+                        await _saveDrawing();
                       }
                     }
                     _currentPointerPosition = null;
