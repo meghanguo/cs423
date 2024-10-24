@@ -67,6 +67,8 @@ class _MyHomePageState extends State<MyHomePage> {
   int drawingsPerPage = 6;
   int currentPageIndex = 0;
 
+  bool isLoading = true;
+
   @override
   void initState() {
     super.initState();
@@ -283,13 +285,16 @@ class _MyHomePageState extends State<MyHomePage> {
     return false;
   }
 
-  final int columns = 2; // The number of columns in your GridView
-
-
   List<Map<String, dynamic>> getDrawingPositions() {
+    Orientation orientation = MediaQuery.of(context).orientation;
+    int columns = orientation == Orientation.portrait ? 2 : 3;
     List<Map<String, dynamic>> drawingPositions = [];
-    double tileWidth = MediaQuery.of(context).size.width / columns; // Width of each tile
-    double tileHeight = tileWidth; // Assuming square tiles
+
+    double tileWidth = 0;
+    double tileHeight = 0;
+
+      tileWidth = MediaQuery.of(context).size.width / columns; // Width of each tile
+      tileHeight = tileWidth;
 
     for (int index = 0; index < savedDrawings.length; index++) {
       double drawingX = (index % columns) * tileWidth;
@@ -318,6 +323,17 @@ class _MyHomePageState extends State<MyHomePage> {
   @override
   Widget build(BuildContext context) {
     List<List<Map<String, dynamic>>> pages = _getPages(savedDrawings);
+    Orientation orientation = MediaQuery.of(context).orientation;
+    int columns = orientation == Orientation.portrait ? 2 : 3;
+    getDrawingPositions();
+
+    if (pages.isEmpty) {
+      return Container(color: Colors.white,);
+    }
+
+    if (currentPageIndex < 0 || currentPageIndex >= pages.length) {
+      currentPageIndex = 0;
+    }
 
     return Scaffold(
       appBar: AppBar(
@@ -397,9 +413,9 @@ class _MyHomePageState extends State<MyHomePage> {
             },
             child: Column (
               children:[
-                Expanded( child: GridView.builder(
+                Expanded( child: Padding(padding: EdgeInsets.all(8.0), child: GridView.builder(
                 physics: NeverScrollableScrollPhysics(),
-                gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(crossAxisCount: 2, childAspectRatio: 1, crossAxisSpacing: 4, mainAxisSpacing: 4,),
+                gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(crossAxisCount: columns, childAspectRatio: 1, crossAxisSpacing: 4, mainAxisSpacing: 4,),
                 itemCount: pages[currentPageIndex].length,
                 itemBuilder: (context, index) {
                   final drawing = pages[currentPageIndex][index];
@@ -444,7 +460,7 @@ class _MyHomePageState extends State<MyHomePage> {
                         ),
                       ));
                 },
-              ),),
+              ),),),
     SizedBox(height: 10,),
     Padding(padding: const EdgeInsets.only(left: 10.0, right: 10.0, bottom: 30.0),
     child:
