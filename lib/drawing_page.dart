@@ -336,6 +336,7 @@ class _DrawingPageState extends State<DrawingPage>
   double canvasSize = 100;
   double offsetX = 0.0;
   double offsetY = 0.0;
+  bool scroll = false;
 
   @override
   Widget build(BuildContext context) {
@@ -350,6 +351,10 @@ class _DrawingPageState extends State<DrawingPage>
                 crossAxisAlignment: CrossAxisAlignment.end,
                 children: [
                   SizedBox(width: 10),
+                  ElevatedButton(onPressed: () {setState(() {
+                    scroll = !scroll;
+                  });}, child: Text(scroll ? "Paint" : "Scroll")),
+                  SizedBox(width: 15),
                   ColorPalette(selectedColorListenable: selectedColor),
                   SizedBox(width: 15),
                   ValueListenableBuilder<DrawingTool>(
@@ -376,18 +381,18 @@ class _DrawingPageState extends State<DrawingPage>
                             },
                             tooltip: 'Eraser');
                       }),
-                  ValueListenableBuilder<DrawingTool>(
-                      valueListenable: drawingTool,
-                      builder: (context, tool, child) {
-                        return _IconBox(
-                            iconData: FontAwesomeIcons.hand,
-                            selected: tool == DrawingTool.scroll,
-                            onTap: () {
-                              drawingTool.value = DrawingTool.scroll;
-                              setState(() {});
-                            },
-                            tooltip: 'Scroll');
-                      }),
+                  // ValueListenableBuilder<DrawingTool>(
+                  //     valueListenable: drawingTool,
+                  //     builder: (context, tool, child) {
+                  //       return _IconBox(
+                  //           iconData: FontAwesomeIcons.hand,
+                  //           selected: tool == DrawingTool.scroll,
+                  //           onTap: () {
+                  //             drawingTool.value = DrawingTool.scroll;
+                  //             setState(() {});
+                  //           },
+                  //           tooltip: 'Scroll');
+                  //     }),
                   SizedBox(width: 15),
                   Expanded(
                       child: AnimatedSwitcher(
@@ -496,8 +501,10 @@ class _DrawingPageState extends State<DrawingPage>
           Expanded(
               child: SingleChildScrollView(
                   scrollDirection: Axis.horizontal,
+                  physics: scroll ? AlwaysScrollableScrollPhysics() : NeverScrollableScrollPhysics(),
                   child: SingleChildScrollView(
                       scrollDirection: Axis.vertical,
+                      physics: scroll ? AlwaysScrollableScrollPhysics() : NeverScrollableScrollPhysics(),
                       child: Container(
                           width: 1000,
                           height: 1000,
@@ -541,6 +548,9 @@ class _DrawingPageState extends State<DrawingPage>
                                     ),
                                   ),
                                 ),
+                              AbsorbPointer(
+                                absorbing: scroll,
+                              child:
                               GestureDetector(
                                   onDoubleTap: () {
                                 final strokeCount = allStrokes.value.length;
@@ -576,23 +586,19 @@ class _DrawingPageState extends State<DrawingPage>
                                 }
                               },
                                   onPanStart: (details) {
-                                    if (drawingTool.value != DrawingTool.scroll) {
                                       _points.clear();
                                       _points.add(Point(details.localPosition.dx,
                                           details.localPosition.dy, 0));
                                       _currentPointerPosition =
                                           details.localPosition;
-                                    }
                                   setState(() {
 
                                   });
                               }, onPanUpdate: (details) {
-                                    if (drawingTool.value != DrawingTool.scroll) {
                                         _points.add(Point(details.localPosition.dx,
                                             details.localPosition.dy, 0));
                                         _currentPointerPosition =
                                             details.localPosition;
-                                    }
                                     setState(() {
                                     });
                               }, onPanEnd: (details) async {
@@ -610,7 +616,7 @@ class _DrawingPageState extends State<DrawingPage>
                                   setState(() {});
                                 }
                               }),
-                            ],
+                              )],
                           )))))
         ],
       ),
