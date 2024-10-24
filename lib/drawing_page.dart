@@ -192,11 +192,11 @@ class _DrawingPageState extends State<DrawingPage>
       final byteData = await image.toByteData(format: ui.ImageByteFormat.png);
       final buffer = byteData!.buffer.asUint8List();
       final directory = await getApplicationDocumentsDirectory();
-      final filePath = '${directory.path}/${drawingName}2.png';
+      final filePath = '${directory.path}/${drawingName}.png';
       final file = File(filePath);
       await file.writeAsBytes(buffer);
 
-      final strokePath = '${directory.path}/${drawingName}2.json';
+      final strokePath = '${directory.path}/${drawingName}.json';
       final strokesJson = jsonEncode(allStrokes.value.map((stroke) => stroke.toJson()).toList());
       await File(strokePath).writeAsString(strokesJson);
 

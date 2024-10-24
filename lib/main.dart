@@ -204,6 +204,43 @@ class _MyHomePageState extends State<MyHomePage> {
     return [];
   }
 
+  Future<void> _confirmDeleteDrawing(String path, String name) async{
+    final bool? confirm = await showDialog(context: context, builder: (BuildContext context) {
+      return AlertDialog(
+        title: Text("Delete Drawing"),
+        content: Text("Delete '$name'"),
+        actions: <Widget>[
+          TextButton(onPressed: () {Navigator.of(context).pop(false);}, child: Text("Cancel")),
+          TextButton(onPressed: () {Navigator.of(context).pop(true);}, child: Text("Delete"))
+        ],
+      );
+    });
+
+    if (confirm == true) {
+      try {
+        final image = File(path);
+        if (await image.exists()) {
+          await image.delete();
+          final shortName = name.replaceAll(".png", "");
+          final directory = await getApplicationDocumentsDirectory();
+          final jsonFile = File('${directory.path}/${shortName}.json');
+          if (await jsonFile.exists()) {
+            await jsonFile.delete();
+          }
+          _loadDrawings();
+        }
+      } catch (e) {
+        AlertDialog(
+          title: Text("Error"),
+          content: Text("Image couldn't be deleted"),
+          actions: <Widget>[
+            TextButton(onPressed: () {Navigator.of(context).pop();}, child: Text("Ok")),
+          ],
+        );
+      }
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -243,7 +280,11 @@ class _MyHomePageState extends State<MyHomePage> {
                     savedDrawings[index]['name'],
                     style: TextStyle(color: Colors.black),
                     textAlign: TextAlign.center,
-                  )
+                  ),
+                  trailing: IconButton(
+                    icon:Icon(Icons.delete, color: Colors.red,),
+                    onPressed: () async {_confirmDeleteDrawing(savedDrawings[index]['path'], savedDrawings[index]['name']);},
+                  ),
                 ),
               ));
             },
