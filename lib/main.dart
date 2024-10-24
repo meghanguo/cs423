@@ -64,12 +64,16 @@ class _MyHomePageState extends State<MyHomePage> {
   late JavascriptRuntime jsRuntime;
   String jsCode = ' ';
 
+  late PageController _pageController;
+  int drawingsPerPage = 8;
+
   @override
   void initState() {
     super.initState();
     loadJs();
     jsRuntime = getJavascriptRuntime();
     _loadDrawings();
+    _pageController = PageController();
   }
 
   Future<void> loadJs() async {
@@ -262,10 +266,59 @@ class _MyHomePageState extends State<MyHomePage> {
     });
   }
 
+  bool isDrawing(double x, double y, List<Map<String, dynamic>> drawings) {
+    for (var drawing in drawings) {
+      double drawingX = drawing['x'];
+      double drawingY = drawing['y'];
+      double drawingWidth = drawing['width'];
+      double drawingHeight = drawing['height'];
+
+      if (x >= drawingX && x <= drawingX + drawingWidth &&
+          y >= drawingY && y <= drawingY + drawingHeight) {
+        toggleFavorite(drawing['name']); // Toggle the favorite status
+        return true; // Drawing found
+      }
+    }
+    return false;
+  }
+
+  final int columns = 2; // The number of columns in your GridView
+
+
+  List<Map<String, dynamic>> getDrawingPositions() {
+    List<Map<String, dynamic>> drawingPositions = [];
+    double tileWidth = MediaQuery.of(context).size.width / columns; // Width of each tile
+    double tileHeight = tileWidth; // Assuming square tiles
+
+    for (int index = 0; index < savedDrawings.length; index++) {
+      double drawingX = (index % columns) * tileWidth;
+      double drawingY = (index ~/ columns) * tileHeight;
+
+      drawingPositions.add({
+        'name': savedDrawings[index]['name'],
+        'x': drawingX,
+        'y': drawingY,
+        'width': tileWidth,
+        'height': tileHeight,
+        'path': savedDrawings[index]['path'],
+      });
+    }
+    return drawingPositions;
+  }
+
+  List<List<Map<String, dynamic>>> _getPages(List<Map<String, dynamic>> drawings) {
+    List<List<Map<String, dynamic>>> pages = [];
+    for (int i = 0; i < drawings.length; i += drawingsPerPage) {
+      pages.add(drawings.sublist(i, i + drawingsPerPage > drawings.length ? drawings.length : i + drawingsPerPage));
+    }
+    return pages;
+  }
+
   @override
   Widget build(BuildContext context) {
     List<Map<String, dynamic>> sortedDrawings = List.from(savedDrawings);
     sortedDrawings.sort((a, b) => (b['favorite'] ? 1 : 0).compareTo(a['favorite'] ? 1 : 0));
+    List<List<Map<String, dynamic>>> pages = _getPages(sortedDrawings);
 
     return Scaffold(
       appBar: AppBar(
@@ -274,92 +327,142 @@ class _MyHomePageState extends State<MyHomePage> {
       ),
       body: Stack(
         children: [
-          GridView.builder(
-            gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(crossAxisCount: 2, childAspectRatio: 1, crossAxisSpacing: 4, mainAxisSpacing: 4,),
-            itemCount: savedDrawings.length,
-            itemBuilder: (context, index) {
-              return GestureDetector(
-                onTap: () async {
-                  List<Stroke> strokes = await _loadStrokesFromFile(sortedDrawings[index]['path']);
-
-                  await Navigator.push(context,
-                    MaterialPageRoute(builder: (context) => DrawingPage(
-                      onSave: addDrawing,
-                      strokes: strokes,
-                      existingDrawingName: savedDrawings[index]['name'],
-                    ),
-                    ),
-                  );
-                  _loadDrawings();
-                },
-              child:
-                GridTile(
-                child: Image.file(
-                  File(savedDrawings[index]['path']),
-                  fit: BoxFit.cover,
-                ),
-                footer: GridTileBar(
-                  backgroundColor: Colors.white,
-                  title: Text(
-                    savedDrawings[index]['name'],
-                    style: TextStyle(color: Colors.black),
-                    textAlign: TextAlign.center,
-                  ),
-                  leading: IconButton(onPressed: () => toggleFavorite(sortedDrawings[index]['name']),
-                    icon: Icon(
-                      sortedDrawings[index]['favorite'] ? Icons.star : Icons.star_border,
-                      color: sortedDrawings[index]['favorite'] ? Colors.yellow : Colors.grey,
-                    ),
-                  ),
-                  trailing: IconButton(
-                    icon:Icon(Icons.delete, color: Colors.red,),
-                    onPressed: () async {_confirmDeleteDrawing(savedDrawings[index]['path'], savedDrawings[index]['name']);},
-                  ),
-                ),
-              ));
+          GestureDetector(
+            onPanStart: (details) {
+              _points.add(Point(details.localPosition.dx, details.localPosition.dy, strokeNum));
             },
-          ),
-            GestureDetector(
-              onPanStart: (details) {
-                  _points.add(Point(details.localPosition.dx, details.localPosition.dy, strokeNum));
-              },
-              onPanUpdate: (details) {
-                  setState(() {
-                    _points.add(Point(details.localPosition.dx, details.localPosition.dy, strokeNum));
-                  });
-              },
-              onPanEnd: (details) async {
-                if (_points.isNotEmpty) {
-                  // recognize for 2 stroke plus signs
-                  if (!firstStroke) {
-                    String gestureName = pDollarRecognizer(_points);
-                    if (gestureName == "plus") {
-                      print("in 2 stroke");
-                      print("gesture name: " + gestureName);
-                      _points.clear();
-                      _openNewDrawingScreen();
-                    }
-                    else {
-                      await keepLastStroke();
-                    }
+            onPanUpdate: (details) {
+              setState(() {
+                _points.add(Point(details.localPosition.dx, details.localPosition.dy, strokeNum));
+              });
+            },
+            onPanEnd: (details) async {
+              if (_points.isNotEmpty) {
+                // recognize for 2 stroke plus signs
+                if (!firstStroke) {
+                  String gestureName = pDollarRecognizer(_points);
+                  if (gestureName == "plus") {
+                    print("in 2 stroke");
+                    print("gesture name: " + gestureName);
+                    _points.clear();
+                    _openNewDrawingScreen();
                   }
-
-                  // recognize for 1 stroke plus signs
-                  if (_points.isNotEmpty) {
-                    String gestureName = pDollarRecognizer(_points);
-                    if ( (gestureName == "plus" || gestureName == "s") & (gestureName != "line")) {
-                      print("in one stroke");
-                      print("gesture name: " + gestureName);
-                      _points.clear();
-                      _openNewDrawingScreen();
-                    }
+                  else {
+                    await keepLastStroke();
                   }
-
-                  strokeNum += 1;
-                  firstStroke = false;
                 }
-              },
-            ),
+
+                // recognize for 1 stroke plus signs
+                if (_points.isNotEmpty) {
+                  await showDialog(
+                    context: context,
+                    builder: (BuildContext context) {
+                      return AlertDialog(
+                        title: Text("gesture"),
+                        actions: <Widget>[
+                          TextButton(
+                            child: Text("OK"),
+                            onPressed: () {
+                              Navigator.of(context).pop();
+                            },
+                          )
+                        ],
+                      );
+                    },
+                  );
+                  String gestureName = pDollarRecognizer(_points);
+                  if (gestureName == "plus") {
+                    print("in one stroke");
+                    print("gesture name: " + gestureName);
+                    _points.clear();
+                    _openNewDrawingScreen();
+                  } else if (gestureName == "star") {
+                    await showDialog(
+                      context: context,
+                      builder: (BuildContext context) {
+                        return AlertDialog(
+                          title: Text("Favorite"),
+                          actions: <Widget>[
+                            TextButton(
+                              child: Text("OK"),
+                              onPressed: () {
+                                Navigator.of(context).pop();
+                              },
+                            )
+                          ],
+                        );
+                      },
+                    );
+                    print("in one stroke");
+                    print("gesture name: " + gestureName);
+                    _points.clear();
+                    double endX = _points.last.X;
+                    double endY = _points.last.Y;
+
+                    List<Map<String, dynamic>> drawingPositions = getDrawingPositions();
+
+                    for (var drawing in sortedDrawings) {
+                      if (isDrawing(endX, endY, drawingPositions)) {
+                        toggleFavorite(drawing['name']);
+                        break;
+                      }
+                    }
+                  }
+                }
+
+                strokeNum += 1;
+                firstStroke = false;
+              }
+            },
+            child: PageView.builder(controller: _pageController, itemCount: pages.length, itemBuilder: (context, pageIndex) {
+              return GridView.builder(
+                physics: NeverScrollableScrollPhysics(),
+                gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(crossAxisCount: 2, childAspectRatio: 1, crossAxisSpacing: 4, mainAxisSpacing: 4,),
+                itemCount: savedDrawings.length,
+                itemBuilder: (context, index) {
+                  return GestureDetector(
+                      onTap: () async {
+                        List<Stroke> strokes = await _loadStrokesFromFile(sortedDrawings[index]['path']);
+
+                        await Navigator.push(context,
+                          MaterialPageRoute(builder: (context) => DrawingPage(
+                            onSave: addDrawing,
+                            strokes: strokes,
+                            existingDrawingName: savedDrawings[index]['name'],
+                          ),
+                          ),
+                        );
+                        _loadDrawings();
+                      },
+                      child:
+                      GridTile(
+                        child: Image.file(
+                          File(savedDrawings[index]['path']),
+                          fit: BoxFit.cover,
+                        ),
+                        footer: GridTileBar(
+                          backgroundColor: Colors.white,
+                          title: Text(
+                            savedDrawings[index]['name'],
+                            style: TextStyle(color: Colors.black),
+                            textAlign: TextAlign.center,
+                          ),
+                          leading: IconButton(onPressed: () => toggleFavorite(sortedDrawings[index]['name']),
+                            icon: Icon(
+                              sortedDrawings[index]['favorite'] ? Icons.star : Icons.star_border,
+                              color: sortedDrawings[index]['favorite'] ? Colors.yellow : Colors.grey,
+                            ),
+                          ),
+                          trailing: IconButton(
+                            icon:Icon(Icons.delete, color: Colors.red,),
+                            onPressed: () async {_confirmDeleteDrawing(savedDrawings[index]['path'], savedDrawings[index]['name']);},
+                          ),
+                        ),
+                      ));
+                },
+              );
+            },)
+          ),
         ],
       ),
     );
