@@ -371,11 +371,12 @@ class _MyHomePageState extends State<MyHomePage> {
     int columns = orientation == Orientation.portrait ? 2 : 3;
     getDrawingPositions();
 
-    if (pages.isEmpty) {
-      return Container(
-        color: Colors.white,
-      );
-    }
+    // if (pages.isEmpty) {
+    //   print("hello");
+    //   return Container(
+    //     color: Colors.white,
+    //   );
+    // }
 
     if (currentPageIndex < 0 || currentPageIndex >= pages.length) {
       currentPageIndex = 0;
@@ -475,7 +476,7 @@ class _MyHomePageState extends State<MyHomePage> {
                       crossAxisSpacing: 4,
                       mainAxisSpacing: 4,
                     ),
-                    itemCount: pages[currentPageIndex].length,
+                    itemCount: pages.length == 0 ? 0 : pages[currentPageIndex].length,
                     itemBuilder: (context, index) {
                       final drawing = pages[currentPageIndex][index];
 
