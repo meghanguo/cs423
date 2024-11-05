@@ -445,10 +445,10 @@ class _MyHomePageState extends State<MyHomePage> {
             },
             // Try to recognize plus for new drawing
             onPanEnd: (details) async {
-              // for (var point in _points) {
-              //   debugPrint('${point.X.round().toString()},${point.Y.round().toString()}');
-              // }
-              // _points.clear();
+              for (var point in _points) {
+                debugPrint('${point.X.round().toString()},${point.Y.round().toString()}');
+              }
+              _points.clear();
               if (_points.isNotEmpty) {
                 // recognize for 2 stroke plus signs
                 if (!firstStroke) {
@@ -503,6 +503,7 @@ class _MyHomePageState extends State<MyHomePage> {
                       );
                     }
                     _points.clear();
+                    print(_points.length);
                   }
                 }
                 firstStroke = false;

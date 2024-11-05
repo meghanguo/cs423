@@ -579,8 +579,8 @@ class _DrawingPageState extends State<DrawingPage>
                                 absorbing: scroll,
                               child:
                               GestureDetector(
-                                onLongPress: () {allStrokes.value.removeLast();}
-                                  ,
+                                onLongPress: () {allStrokes.value.removeLast();},
+                                  onLongPressUp: () {allStrokes.value.removeLast();},
                                   onDoubleTap: () async {
                                 final strokeCount = allStrokes.value.length;
                                 allStrokes.value
