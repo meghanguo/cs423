@@ -1,0 +1,18 @@
+{
+  "" : {
+    "diagnostics" : "/Users/megguo/Documents/GitHub/cs423/build/macos/Build/Intermediates.noindex/Pods.build/Debug/flutter_js.build/Objects-normal/arm64/flutter_js-master.dia",
+    "emit-module-dependencies" : "/Users/megguo/Documents/GitHub/cs423/build/macos/Build/Intermediates.noindex/Pods.build/Debug/flutter_js.build/Objects-normal/arm64/flutter_js-master-emit-module.d",
+    "emit-module-diagnostics" : "/Users/megguo/Documents/GitHub/cs423/build/macos/Build/Intermediates.noindex/Pods.build/Debug/flutter_js.build/Objects-normal/arm64/flutter_js-master-emit-module.dia",
+    "swift-dependencies" : "/Users/megguo/Documents/GitHub/cs423/build/macos/Build/Intermediates.noindex/Pods.build/Debug/flutter_js.build/Objects-normal/arm64/flutter_js-master.swiftdeps"
+  },
+  "/Users/megguo/.pub-cache/hosted/pub.dev/flutter_js-0.8.1/macos/Classes/FlutterJsPlugin.swift" : {
+    "const-values" : "/Users/megguo/Documents/GitHub/cs423/build/macos/Build/Intermediates.noindex/Pods.build/Debug/flutter_js.build/Objects-normal/arm64/FlutterJsPlugin.swiftconstvalues",
+    "dependencies" : "/Users/megguo/Documents/GitHub/cs423/build/macos/Build/Intermediates.noindex/Pods.build/Debug/flutter_js.build/Objects-normal/arm64/FlutterJsPlugin.d",
+    "diagnostics" : "/Users/megguo/Documents/GitHub/cs423/build/macos/Build/Intermediates.noindex/Pods.build/Debug/flutter_js.build/Objects-normal/arm64/FlutterJsPlugin.dia",
+    "index-unit-output-path" : "/Pods.build/Debug/flutter_js.build/Objects-normal/arm64/FlutterJsPlugin.o",
+    "llvm-bc" : "/Users/megguo/Documents/GitHub/cs423/build/macos/Build/Intermediates.noindex/Pods.build/Debug/flutter_js.build/Objects-normal/arm64/FlutterJsPlugin.bc",
+    "object" : "/Users/megguo/Documents/GitHub/cs423/build/macos/Build/Intermediates.noindex/Pods.build/Debug/flutter_js.build/Objects-normal/arm64/FlutterJsPlugin.o",
+    "swift-dependencies" : "/Users/megguo/Documents/GitHub/cs423/build/macos/Build/Intermediates.noindex/Pods.build/Debug/flutter_js.build/Objects-normal/arm64/FlutterJsPlugin.swiftdeps",
+    "swiftmodule" : "/Users/megguo/Documents/GitHub/cs423/build/macos/Build/Intermediates.noindex/Pods.build/Debug/flutter_js.build/Objects-normal/arm64/FlutterJsPlugin~partial.swiftmodule"
+  }
+}

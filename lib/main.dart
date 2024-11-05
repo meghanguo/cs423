@@ -46,6 +46,16 @@ class Point {
       'ID': ID,
     };
   }
+
+  @override
+  bool operator ==(Object other) {
+    if (identical(this, other)) return true;
+    if (other is! Point) return false;
+    return X == other.X && Y == other.Y && ID == other.ID;
+  }
+
+  @override
+  int get hashCode => X.hashCode ^ Y.hashCode ^ ID.hashCode;
 }
 
 class MyHomePage extends StatefulWidget {
@@ -314,7 +324,27 @@ class _MyHomePageState extends State<MyHomePage> {
           x <= drawingX + drawingWidth &&
           y >= drawingY &&
           y <= drawingY + drawingHeight) {
-        toggleFavorite(drawing['name']); // Toggle the favorite status
+
+        showDialog(context: context, builder: (BuildContext context) {
+          return AlertDialog(
+            title: Text('Favorite / Unfavorite ${drawing['name']}?'),
+            actions: [
+              TextButton(
+                onPressed: () {
+                  toggleFavorite(drawing['name']);
+                  Navigator.of(context).pop();
+                },
+                child: Text('Yes'),
+              ),
+              TextButton(
+                onPressed: () {
+                  Navigator.of(context).pop(); // Close the dialog without any action
+                },
+                child: Text('No'),
+              ),
+            ],
+          );
+        });
         return true;
       }
     }
@@ -364,19 +394,28 @@ class _MyHomePageState extends State<MyHomePage> {
     return pages;
   }
 
+  List<Point> interpolate(Point start, Point end, int steps) {
+    List<Point> interpolatedPoints = [];
+    double dxIncrement = (end.X - start.X) / steps;
+    double dyIncrement = (end.Y - start.Y) / steps;
+
+    for (int i = 0; i <= steps; i++) {
+      double newX = (start.X + dxIncrement * i).roundToDouble();
+      double newY = (start.Y + dyIncrement * i).roundToDouble();
+      Point newPoint = Point(newX, newY, strokeNum);
+      if (!_points.contains(newPoint) && !interpolatedPoints.contains(newPoint)) {
+        interpolatedPoints.add(newPoint);
+      }
+    }
+    return interpolatedPoints;
+  }
+
   @override
   Widget build(BuildContext context) {
     List<List<Map<String, dynamic>>> pages = _getPages(savedDrawings);
     Orientation orientation = MediaQuery.of(context).orientation;
     int columns = orientation == Orientation.portrait ? 2 : 3;
     getDrawingPositions();
-
-    // if (pages.isEmpty) {
-    //   print("hello");
-    //   return Container(
-    //     color: Colors.white,
-    //   );
-    // }
 
     if (currentPageIndex < 0 || currentPageIndex >= pages.length) {
       currentPageIndex = 0;
@@ -395,12 +434,21 @@ class _MyHomePageState extends State<MyHomePage> {
             },
             onPanUpdate: (details) {
               setState(() {
-                _points.add(Point(details.localPosition.dx,
-                    details.localPosition.dy, strokeNum));
+                Point lastPoint = _points.last;
+
+                List<Point> interpolatedPoints = interpolate(lastPoint,
+                    Point(details.localPosition.dx, details.localPosition.dy, strokeNum),
+                    5);
+
+                _points.addAll(interpolatedPoints);
               });
             },
             // Try to recognize plus for new drawing
             onPanEnd: (details) async {
+              // for (var point in _points) {
+              //   debugPrint('${point.X.round().toString()},${point.Y.round().toString()}');
+              // }
+              // _points.clear();
               if (_points.isNotEmpty) {
                 // recognize for 2 stroke plus signs
                 if (!firstStroke) {
@@ -424,19 +472,19 @@ class _MyHomePageState extends State<MyHomePage> {
                     _points.clear();
                     _openNewDrawingScreen();
                   }
-                  else if (gestureName == "star" || gestureName == "heart") { // Try to recognize star or heart for favoriting
+                  else if (gestureName == "star") { // Try to recognize star for favoriting
                     // print("in one stroke");
                     // print("gesture name: " + gestureName);
 
-                    double endX = _points.last.X;
-                    double endY = _points.last.Y;
+                    double beginX = _points.first.X;
+                    double beginY = _points.first.Y;
 
                     List<Map<String, dynamic>> drawingPositions =
                         getDrawingPositions();
 
                     // Add drawing to favorite if gesture ends on that drawing
                     if (!favoriteDrawingThruGesture(
-                        endX, endY, drawingPositions)) {
+                        beginX, beginY, drawingPositions)) {
                       await showDialog(
                         context: context,
                         builder: (BuildContext context) {
@@ -454,14 +502,12 @@ class _MyHomePageState extends State<MyHomePage> {
                         },
                       );
                     }
-
                     _points.clear();
                   }
                 }
-
-                strokeNum += 1;
                 firstStroke = false;
               }
+              strokeNum += 1;
             },
             // Widget tree
             child: Column(children: [
@@ -509,10 +555,7 @@ class _MyHomePageState extends State<MyHomePage> {
                                 style: TextStyle(color: Colors.black),
                                 textAlign: TextAlign.center,
                               ),
-                              leading: IconButton(
-                                onPressed: () =>
-                                    toggleFavorite(drawing['name']),
-                                icon: Icon(
+                              leading: Icon(
                                   drawing['favorite']
                                       ? Icons.star
                                       : Icons.star_border,
@@ -520,7 +563,6 @@ class _MyHomePageState extends State<MyHomePage> {
                                       ? Colors.yellow
                                       : Colors.grey,
                                 ),
-                              ),
                               trailing: IconButton(
                                 icon: Icon(
                                   Icons.delete,

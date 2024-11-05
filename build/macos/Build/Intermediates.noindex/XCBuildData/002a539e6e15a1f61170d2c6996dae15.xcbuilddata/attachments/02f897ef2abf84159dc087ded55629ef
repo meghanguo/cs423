@@ -1,0 +1,28 @@
+{
+  "" : {
+    "diagnostics" : "/Users/megguo/Documents/GitHub/cs423/build/macos/Build/Intermediates.noindex/Pods.build/Debug/file_saver.build/Objects-normal/arm64/file_saver-master.dia",
+    "emit-module-dependencies" : "/Users/megguo/Documents/GitHub/cs423/build/macos/Build/Intermediates.noindex/Pods.build/Debug/file_saver.build/Objects-normal/arm64/file_saver-master-emit-module.d",
+    "emit-module-diagnostics" : "/Users/megguo/Documents/GitHub/cs423/build/macos/Build/Intermediates.noindex/Pods.build/Debug/file_saver.build/Objects-normal/arm64/file_saver-master-emit-module.dia",
+    "swift-dependencies" : "/Users/megguo/Documents/GitHub/cs423/build/macos/Build/Intermediates.noindex/Pods.build/Debug/file_saver.build/Objects-normal/arm64/file_saver-master.swiftdeps"
+  },
+  "/Users/megguo/.pub-cache/hosted/pub.dev/file_saver-0.2.14/macos/Classes/Dialog.swift" : {
+    "const-values" : "/Users/megguo/Documents/GitHub/cs423/build/macos/Build/Intermediates.noindex/Pods.build/Debug/file_saver.build/Objects-normal/arm64/Dialog.swiftconstvalues",
+    "dependencies" : "/Users/megguo/Documents/GitHub/cs423/build/macos/Build/Intermediates.noindex/Pods.build/Debug/file_saver.build/Objects-normal/arm64/Dialog.d",
+    "diagnostics" : "/Users/megguo/Documents/GitHub/cs423/build/macos/Build/Intermediates.noindex/Pods.build/Debug/file_saver.build/Objects-normal/arm64/Dialog.dia",
+    "index-unit-output-path" : "/Pods.build/Debug/file_saver.build/Objects-normal/arm64/Dialog.o",
+    "llvm-bc" : "/Users/megguo/Documents/GitHub/cs423/build/macos/Build/Intermediates.noindex/Pods.build/Debug/file_saver.build/Objects-normal/arm64/Dialog.bc",
+    "object" : "/Users/megguo/Documents/GitHub/cs423/build/macos/Build/Intermediates.noindex/Pods.build/Debug/file_saver.build/Objects-normal/arm64/Dialog.o",
+    "swift-dependencies" : "/Users/megguo/Documents/GitHub/cs423/build/macos/Build/Intermediates.noindex/Pods.build/Debug/file_saver.build/Objects-normal/arm64/Dialog.swiftdeps",
+    "swiftmodule" : "/Users/megguo/Documents/GitHub/cs423/build/macos/Build/Intermediates.noindex/Pods.build/Debug/file_saver.build/Objects-normal/arm64/Dialog~partial.swiftmodule"
+  },
+  "/Users/megguo/.pub-cache/hosted/pub.dev/file_saver-0.2.14/macos/Classes/FileSaverPlugin.swift" : {
+    "const-values" : "/Users/megguo/Documents/GitHub/cs423/build/macos/Build/Intermediates.noindex/Pods.build/Debug/file_saver.build/Objects-normal/arm64/FileSaverPlugin.swiftconstvalues",
+    "dependencies" : "/Users/megguo/Documents/GitHub/cs423/build/macos/Build/Intermediates.noindex/Pods.build/Debug/file_saver.build/Objects-normal/arm64/FileSaverPlugin.d",
+    "diagnostics" : "/Users/megguo/Documents/GitHub/cs423/build/macos/Build/Intermediates.noindex/Pods.build/Debug/file_saver.build/Objects-normal/arm64/FileSaverPlugin.dia",
+    "index-unit-output-path" : "/Pods.build/Debug/file_saver.build/Objects-normal/arm64/FileSaverPlugin.o",
+    "llvm-bc" : "/Users/megguo/Documents/GitHub/cs423/build/macos/Build/Intermediates.noindex/Pods.build/Debug/file_saver.build/Objects-normal/arm64/FileSaverPlugin.bc",
+    "object" : "/Users/megguo/Documents/GitHub/cs423/build/macos/Build/Intermediates.noindex/Pods.build/Debug/file_saver.build/Objects-normal/arm64/FileSaverPlugin.o",
+    "swift-dependencies" : "/Users/megguo/Documents/GitHub/cs423/build/macos/Build/Intermediates.noindex/Pods.build/Debug/file_saver.build/Objects-normal/arm64/FileSaverPlugin.swiftdeps",
+    "swiftmodule" : "/Users/megguo/Documents/GitHub/cs423/build/macos/Build/Intermediates.noindex/Pods.build/Debug/file_saver.build/Objects-normal/arm64/FileSaverPlugin~partial.swiftmodule"
+  }
+}

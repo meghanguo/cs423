@@ -1,0 +1,71 @@
+{
+  "main_library": {
+    "exported_symbols": [
+      {
+        "data": {
+          "global": [
+            "_$s10file_saver6ParamsVMn",
+            "_$s10file_saver15FileSaverPluginCfD",
+            "_$s10file_saver6ParamsV0A4NameSSSgvg",
+            "_$s10file_saver6DialogC010openSaveAsC06params6resultyAA6ParamsV_yypSgctF",
+            "_$s10file_saver6DialogCN",
+            "_$s10file_saver15FileSaverPluginC6handle_6resultySo17FlutterMethodCallC_yypSgctFTq",
+            "_$s10file_saver6DialogCMn",
+            "_$s10file_saver6ParamsV0A4NameSSSgvpMV",
+            "_$s10file_saver6ParamsVMa",
+            "_$s10file_saver6ParamsVN",
+            "_$s10file_saver15FileSaverPluginCACycfC",
+            "_$s10file_saver6ParamsV3extSSSgvg",
+            "_$s10file_saver15FileSaverPluginC6handle_6resultySo17FlutterMethodCallC_yypSgctF",
+            "_$s10file_saver6DialogCMa",
+            "_$s10file_saver6DialogCfD",
+            "_$s10file_saver6ParamsV5bytesSays5UInt8VGSgvg",
+            "_$s10file_saver15FileSaverPluginCMn",
+            "_$s10file_saver6ParamsV3extSSSgvpMV",
+            "_file_saverVersionString",
+            "_$s10file_saver6DialogCACycfC",
+            "_$s10file_saver6ParamsV5bytesSays5UInt8VGSgvpMV",
+            "_$s10file_saver6DialogC010openSaveAsC06params6resultyAA6ParamsV_yypSgctFTq",
+            "_$s10file_saver15FileSaverPluginCMa",
+            "_$s10file_saver15FileSaverPluginCN",
+            "_$s10file_saver6DialogC8saveFile33_D4C5CDA81D09C203BAC31A1F4939CEC0LL8byteData3url0A4Name3ext6resultySays5UInt8VG_10Foundation3URLVS2SyypSgctF",
+            "_$s10file_saver15FileSaverPluginC8register4withySo07FlutterE9Registrar_p_tFZ",
+            "_$s10file_saver6ParamsVyACSDySSypSgGcfC",
+            "_file_saverVersionNumber",
+            "_$s10file_saver6DialogCACycfc",
+            "_$s10file_saver15FileSaverPluginCACycfc"
+          ],
+          "objc_class": [
+            "_TtC10file_saver6Dialog",
+            "PodsDummy_file_saver",
+            "_TtC10file_saver15FileSaverPlugin"
+          ]
+        }
+      }
+    ],
+    "flags": [
+      {
+        "attributes": [
+          "not_app_extension_safe"
+        ]
+      }
+    ],
+    "install_names": [
+      {
+        "name": "@rpath/file_saver.framework/Versions/A/file_saver"
+      }
+    ],
+    "swift_abi": [
+      {
+        "abi": 7
+      }
+    ],
+    "target_info": [
+      {
+        "min_deployment": "11",
+        "target": "arm64-macos"
+      }
+    ]
+  },
+  "tapi_tbd_version": 5
+}

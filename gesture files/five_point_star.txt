@@ -1,4 +1,4 @@
-five_point_star
+star
 BEGIN
 144,321
 145,306

@@ -1,0 +1,23 @@
+{
+  'version': 0,
+  'use-external-names': 'false',
+  'case-sensitive': 'false',
+  'roots': [{
+    'type': 'directory',
+    'name': "/Users/megguo/Documents/GitHub/cs423/build/macos/Build/Products/Debug/flutter_js/flutter_js.framework/Modules"
+    'contents': [{
+      'type': 'file',
+      'name': "module.modulemap",
+      'external-contents': "/Users/megguo/Documents/GitHub/cs423/build/macos/Build/Intermediates.noindex/Pods.build/Debug/flutter_js.build/unextended-module.modulemap",
+    }]
+    },
+    {
+    'type': 'directory',
+    'name': "/Users/megguo/Documents/GitHub/cs423/build/macos/Build/Products/Debug/flutter_js/flutter_js.framework/Headers"
+    'contents': [{
+      'type': 'file',
+      'name': "flutter_js-Swift.h",
+      'external-contents': "/Users/megguo/Documents/GitHub/cs423/build/macos/Build/Intermediates.noindex/Pods.build/Debug/flutter_js.build/unextended-interface-header.h",
+    }]
+    }]
+}

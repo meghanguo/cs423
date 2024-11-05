@@ -100,15 +100,7 @@ function PDollarRecognizer() // constructor
 	// one predefined point-cloud for each gesture
 	//
 	this.PointClouds = new Array();
-//
-//	this.PointClouds[0] = new PointCloud("T", new Array(
-//		new Point(30,7,1),new Point(103,7,1),
-//		new Point(66,7,2),new Point(66,87,2)
-//	));
 
-	//
-	// The $P Point-Cloud Recognizer API begins here -- 3 methods: Recognize(), AddGesture(), DeleteUserGestures()
-	//
 	this.ProcessGesturesFile = function(file) {
 	    const lines = file.split('\n');
 
