@@ -6,10 +6,10 @@ import 'package:flutter/material.dart';
 /// The standard canvas size is defined by [standardWidth] and [standardHeight].
 extension OffsetExtensions on Offset {
   /// Standard width of the canvas.
-  static const double standardWidth = 800;
+  static const double standardWidth = 1000;
 
   /// Standard height of the canvas.
-  static const double standardHeight = 600;
+  static const double standardHeight = 1000;
 
   /// Scales the current [Offset] to a standard canvas size.
   ///
