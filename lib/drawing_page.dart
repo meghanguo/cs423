@@ -72,9 +72,9 @@ class DrawingPage extends StatefulWidget {
 
   const DrawingPage(
       {super.key,
-      required this.onSave,
-      this.strokes,
-      this.existingDrawingName});
+        required this.onSave,
+        this.strokes,
+        this.existingDrawingName});
 
   @override
   _DrawingPageState createState() => _DrawingPageState();
@@ -87,7 +87,7 @@ class _DrawingPageState extends State<DrawingPage>
   final ValueNotifier<double> strokeSize = ValueNotifier(10.0);
   final ValueNotifier<double> eraserSize = ValueNotifier(10.0);
   final ValueNotifier<DrawingTool> drawingTool =
-      ValueNotifier(DrawingTool.pencil);
+  ValueNotifier(DrawingTool.pencil);
   final GlobalKey canvasGlobalKey = GlobalKey();
   final CurrentStrokeValueNotifier currentStroke = CurrentStrokeValueNotifier();
   final ValueNotifier<List<Stroke>> allStrokes = ValueNotifier([]);
@@ -117,12 +117,12 @@ class _DrawingPageState extends State<DrawingPage>
     jsRuntime.evaluate(jsCode);
     jsRuntime.evaluate('var recognizer = new PDollarRecognizer();');
     String fileContent =
-        await rootBundle.loadString('assets/drawing_page_gestures.txt');
+    await rootBundle.loadString('assets/drawing_page_gestures.txt');
     final result = jsRuntime.evaluate('recognizer.ProcessGesturesFile(`$fileContent`);');
 
     jsRuntime.evaluate('var shapeRecognizer = new PDollarRecognizer();');
     String shapeFileContent =
-        await rootBundle.loadString('assets/drawing_shapes.txt');
+    await rootBundle.loadString('assets/drawing_shapes.txt');
     final shapeResult = jsRuntime.evaluate('shapeRecognizer.ProcessGesturesFile(`$shapeFileContent`);');
 
     print('Recognizers initialized successfully');
@@ -137,7 +137,7 @@ class _DrawingPageState extends State<DrawingPage>
   String shapeRecognizer(List<Point> points) {
     String pointsAsJson = jsonEncode(points);
     final result =
-        jsRuntime.evaluate('shapeRecognizer.Recognize($pointsAsJson);');
+    jsRuntime.evaluate('shapeRecognizer.Recognize($pointsAsJson);');
     return result.stringResult;
   }
 
@@ -277,7 +277,7 @@ class _DrawingPageState extends State<DrawingPage>
               content: TextField(
                 controller: nameController,
                 decoration:
-                    const InputDecoration(hintText: 'Enter drawing name'),
+                const InputDecoration(hintText: 'Enter drawing name'),
               ),
               actions: <Widget>[
                 TextButton(
@@ -348,7 +348,7 @@ class _DrawingPageState extends State<DrawingPage>
 
     final strokePath = '${directory.path}/${drawingName}.json';
     final strokesJson =
-        jsonEncode(allStrokes.value.map((stroke) => stroke.toJson()).toList());
+    jsonEncode(allStrokes.value.map((stroke) => stroke.toJson()).toList());
     await File(strokePath).writeAsString(strokesJson);
 
     return showDialog<void>(
@@ -416,114 +416,118 @@ class _DrawingPageState extends State<DrawingPage>
   @override
   Widget build(BuildContext context) {
     final orientation = MediaQuery.of(context).orientation;
-    double containerHeight = orientation == Orientation.landscape ? 80 : 120;
+    double containerHeight = orientation == Orientation.landscape ? 80 : 90;
 
     return Scaffold(
       body: Column(
         children: [
           Container(
-              color: Theme.of(context).colorScheme.inversePrimary,
-              padding: EdgeInsets.only(bottom: 5.0),
-              height: containerHeight,
-              child: Row(
-                crossAxisAlignment: CrossAxisAlignment.end,
-                children: [
-                  SizedBox(width: 10),
-                  ElevatedButton(onPressed: () {setState(() {
-                    scroll = !scroll;
-                  });}, child: Text(scroll ? "Paint" : "Scroll")),
-                  SizedBox(width: 15),
-                  ColorPalette(selectedColorListenable: selectedColor),
-                  SizedBox(width: 15),
-                  ValueListenableBuilder<DrawingTool>(
-                      valueListenable: drawingTool,
-                      builder: (context, tool, child) {
-                        return Opacity(opacity: scroll ? 0.5 : 1.0,
-                        child: _IconBox(
-                            iconData: FontAwesomeIcons.pencil,
-                            selected: tool == DrawingTool.pencil,
-                            onTap: () {
-                              if (!scroll) {
-                                drawingTool.value = DrawingTool.pencil;
-                                setState(() {});
-                              }
-                            },
-                            tooltip: 'Pencil'));
-                      }),
-                  ValueListenableBuilder<DrawingTool>(
-                      valueListenable: drawingTool,
-                      builder: (context, tool, child) {
-                        return Opacity(opacity: scroll ? 0.5 : 1.0,
-                        child: _IconBox(
-                            iconData: FontAwesomeIcons.eraser,
-                            selected: tool == DrawingTool.eraser,
-                            onTap: () {
-                              if (!scroll) {
-                                drawingTool.value = DrawingTool.eraser;
-                                setState(() {});
-                              }
-                            },
-                            tooltip: 'Eraser'));
-                      }),
-                  SizedBox(width: 15),
-                  Expanded(
-                      child: AnimatedSwitcher(
-                          duration: Duration(milliseconds: 100),
-                          child: Column(
-                              mainAxisAlignment: MainAxisAlignment.end,
-                              children: [
-                                drawingTool.value == DrawingTool.pencil
-                                    ? Row(
-                                        crossAxisAlignment:
-                                            CrossAxisAlignment.center,
-                                        mainAxisAlignment:
-                                            MainAxisAlignment.end,
-                                        key: ValueKey('pencilSlider'),
-                                        children: [
-                                          const Text(
-                                            'Stroke size: ',
-                                            style: TextStyle(fontSize: 12),
-                                          ),
-                                          Flexible(
-                                              child: Slider(
-                                                  value: strokeSize.value,
-                                                  min: 0,
-                                                  max: 50,
-                                                  onChanged: (val) {
-                                                    setState(() {
-                                                      strokeSize.value = val;
-                                                    });
-                                                  }))
-                                        ],
-                                      )
-                                    : Row(
-                                        crossAxisAlignment:
-                                            CrossAxisAlignment.center,
-                                        mainAxisAlignment:
-                                            MainAxisAlignment.end,
-                                        key: ValueKey('eraserSlider'),
-                                        children: [
-                                          const Text(
-                                            'Eraser Size: ',
-                                            style: TextStyle(fontSize: 12),
-                                          ),
-                                          Flexible(
-                                              child: Slider(
-                                                  value: eraserSize.value,
-                                                  min: 0,
-                                                  max: 50,
-                                                  onChanged: (val) {
-                                                    setState(
-                                                      () {
-                                                        eraserSize.value = val;
-                                                      },
-                                                    );
-                                                  }))
-                                        ],
-                                      )
-                              ])))
-                ],
-              ),
+            color: Theme.of(context).colorScheme.inversePrimary,
+            height: containerHeight,
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              crossAxisAlignment: CrossAxisAlignment.end,
+              children: [
+                SizedBox(width: 10),
+                ElevatedButton(onPressed: () {setState(() {
+                  scroll = !scroll;
+                });}, child: Text(scroll ? "Paint" : "Scroll")),
+                SizedBox(width: 15),
+                ColorPalette(selectedColorListenable: selectedColor),
+                SizedBox(width: 15),
+                ValueListenableBuilder<DrawingTool>(
+                    valueListenable: drawingTool,
+                    builder: (context, tool, child) {
+                      return Opacity(opacity: scroll ? 0.5 : 1.0,
+                          child: _IconBox(
+                              iconData: FontAwesomeIcons.pencil,
+                              selected: tool == DrawingTool.pencil,
+                              onTap: () {
+                                if (!scroll) {
+                                  drawingTool.value = DrawingTool.pencil;
+                                  setState(() {});
+                                }
+                              },
+                              tooltip: 'Pencil'));
+                    }),
+                ValueListenableBuilder<DrawingTool>(
+                    valueListenable: drawingTool,
+                    builder: (context, tool, child) {
+                      return Opacity(opacity: scroll ? 0.5 : 1.0,
+                          child: _IconBox(
+                              iconData: FontAwesomeIcons.eraser,
+                              selected: tool == DrawingTool.eraser,
+                              onTap: () {
+                                if (!scroll) {
+                                  drawingTool.value = DrawingTool.eraser;
+                                  setState(() {});
+                                }
+                              },
+                              tooltip: 'Eraser'));
+                    }),
+                SizedBox(width: 15),
+              ],
+            ),
+          ),
+          Container(
+            color: Theme.of(context).colorScheme.inversePrimary,
+            padding: EdgeInsetsDirectional.fromSTEB(15.0, 0.0, 5.0, 0.0),
+            child: Expanded(
+                child: AnimatedSwitcher(
+                    duration: Duration(milliseconds: 100),
+                    child: Column(
+                        mainAxisAlignment: MainAxisAlignment.end,
+                        children: [
+                          drawingTool.value == DrawingTool.pencil
+                              ? Row(
+                            crossAxisAlignment:
+                            CrossAxisAlignment.center,
+                            mainAxisAlignment:
+                            MainAxisAlignment.end,
+                            key: ValueKey('pencilSlider'),
+                            children: [
+                              const Text(
+                                'Stroke size: ',
+                                style: TextStyle(fontSize: 14,),
+                              ),
+                              Flexible(
+                                  child: Slider(
+                                      value: strokeSize.value,
+                                      min: 0,
+                                      max: 50,
+                                      onChanged: (val) {
+                                        setState(() {
+                                          strokeSize.value = val;
+                                        });
+                                      }))
+                            ],
+                          )
+                              : Row(
+                            crossAxisAlignment:
+                            CrossAxisAlignment.center,
+                            mainAxisAlignment:
+                            MainAxisAlignment.end,
+                            key: ValueKey('eraserSlider'),
+                            children: [
+                              const Text(
+                                'Eraser Size: ',
+                                style: TextStyle(fontSize: 14),
+                              ),
+                              Flexible(
+                                  child: Slider(
+                                      value: eraserSize.value,
+                                      min: 0,
+                                      max: 50,
+                                      onChanged: (val) {
+                                        setState(
+                                              () {
+                                            eraserSize.value = val;
+                                          },
+                                        );
+                                      }))
+                            ],
+                          )
+                        ]))),
           ),
           Expanded(
               child: SingleChildScrollView(
@@ -549,13 +553,13 @@ class _DrawingPageState extends State<DrawingPage>
                                 builder: (context, _) {
                                   return DrawingCanvas(
                                       options: DrawingCanvasOptions(
-                                          currentTool: drawingTool.value,
-                                          size: drawingTool.value ==
-                                                  DrawingTool.eraser
-                                              ? eraserSize.value
-                                              : strokeSize.value,
-                                          strokeColor: selectedColor.value,
-                                          backgroundColor: Colors.white,),
+                                        currentTool: drawingTool.value,
+                                        size: drawingTool.value ==
+                                            DrawingTool.eraser
+                                            ? eraserSize.value
+                                            : strokeSize.value,
+                                        strokeColor: selectedColor.value,
+                                        backgroundColor: Colors.white,),
                                       canvasKey: canvasGlobalKey,
                                       currentStrokeListenable: currentStroke,
                                       strokesListenable: allStrokes);
@@ -577,155 +581,155 @@ class _DrawingPageState extends State<DrawingPage>
                                 ),
                               AbsorbPointer(
                                 absorbing: scroll,
-                              child:
-                              GestureDetector(
-                                onLongPress: () {allStrokes.value.removeLast();},
-                                  onLongPressUp: () {allStrokes.value.removeLast();},
-                                  onDoubleTap: () async {
-                                final strokeCount = allStrokes.value.length;
-                                allStrokes.value
-                                    .removeRange(strokeCount - 2, strokeCount);
-                                if (strokeCount - 2 > 0) {
-                                  final lastStroke =
-                                      allStrokes.value.last.points;
-                                  List<Point> lastPoints = lastStroke
-                                      .map((offset) =>
-                                          Point(offset.dx, offset.dy, 0))
-                                      .toList();
-                                  String recognizedShape =
-                                      shapeRecognizer(lastPoints);
+                                child:
+                                GestureDetector(
+                                    onLongPress: () {allStrokes.value.removeLast();},
+                                    onLongPressUp: () {allStrokes.value.removeLast();},
+                                    onDoubleTap: () async {
+                                      final strokeCount = allStrokes.value.length;
+                                      allStrokes.value
+                                          .removeRange(strokeCount - 2, strokeCount);
+                                      if (strokeCount - 2 > 0) {
+                                        final lastStroke =
+                                            allStrokes.value.last.points;
+                                        List<Point> lastPoints = lastStroke
+                                            .map((offset) =>
+                                            Point(offset.dx, offset.dy, 0))
+                                            .toList();
+                                        String recognizedShape =
+                                        shapeRecognizer(lastPoints);
 
-                                  if (recognizedShape == "circle") {
-                                    final convert = await showDialog<bool>(
-                                        context: context,
-                                        barrierDismissible: false,
-                                        builder: (BuildContext context) {
-                                          return AlertDialog(
-                                            content: Text("Change to standard circle?"),
-                                            actions: <Widget>[
-                                              TextButton(
-                                                  onPressed: () {
-                                                    Navigator.of(context).pop(false);
-                                                  },
-                                                  child: const Text('No')),
-                                              TextButton(
-                                                onPressed: () {
-                                                    Navigator.of(context).pop(true);
-                                                },
-                                                child: const Text("Yes"),
-                                              )
-                                            ],
-                                          );
-                                        });
+                                        if (recognizedShape == "circle") {
+                                          final convert = await showDialog<bool>(
+                                              context: context,
+                                              barrierDismissible: false,
+                                              builder: (BuildContext context) {
+                                                return AlertDialog(
+                                                  content: Text("Change to standard circle?"),
+                                                  actions: <Widget>[
+                                                    TextButton(
+                                                        onPressed: () {
+                                                          Navigator.of(context).pop(false);
+                                                        },
+                                                        child: const Text('No')),
+                                                    TextButton(
+                                                      onPressed: () {
+                                                        Navigator.of(context).pop(true);
+                                                      },
+                                                      child: const Text("Yes"),
+                                                    )
+                                                  ],
+                                                );
+                                              });
 
-                                    if (convert!) {
-                                      Offset center = calculateCenter(lastPoints);
-                                      double averageRadius = calculateAverageRadius(lastPoints, center);
-                                      List<Offset> normalizedCircle = generateNormalizedCircle(center, averageRadius, 200);
-                                      allStrokes.value.last.points = normalizedCircle;
-                                    }
-                                  }
-                                  else if (recognizedShape == "triangle"){
-                                    final convert = await showDialog<bool>(
-                                        context: context,
-                                        barrierDismissible: false,
-                                        builder: (BuildContext context) {
-                                          return AlertDialog(
-                                            content: Text("Change to standard triangle?"),
-                                            actions: <Widget>[
-                                              TextButton(
-                                                  onPressed: () {
-                                                    Navigator.of(context).pop(false);
-                                                  },
-                                                  child: const Text('No')),
-                                              TextButton(
-                                                onPressed: () {
-                                                  Navigator.of(context).pop(true);
-                                                },
-                                                child: const Text("Yes"),
-                                              )
-                                            ],
-                                          );
-                                        });
-                                    if (convert!) {
-                                      Offset center = calculateCenter(lastPoints);
-                                      List<Offset> normalizedTriangle = generateNormalizedTriangle(center, 100);
-                                      allStrokes.value.last.points = normalizedTriangle;
-                                    }
-                                  } else if (recognizedShape == "square"){
-                                    final convert = await showDialog<bool>(
-                                        context: context,
-                                        barrierDismissible: false,
-                                        builder: (BuildContext context) {
-                                          return AlertDialog(
-                                            content: Text("Change to standard square?"),
-                                            actions: <Widget>[
-                                              TextButton(
-                                                  onPressed: () {
-                                                    Navigator.of(context).pop(false);
-                                                  },
-                                                  child: const Text('No')),
-                                              TextButton(
-                                                onPressed: () {
-                                                  Navigator.of(context).pop(true);
-                                                },
-                                                child: const Text("Yes"),
-                                              )
-                                            ],
-                                          );
-                                        });
-                                    if (convert!) {
-                                      Offset center = calculateCenter(lastPoints);
-                                      List<Offset> normalizedSquare = generateNormalizedSquarePoints(center, 100); // You can choose your size
-                                      allStrokes.value.last.points = normalizedSquare;
-                                    }
-                                  }
-                                  else {
-                                    showDialog(
-                                      context: context,
-                                      builder: (context) => AlertDialog(
-                                      // title: Text("$recognizedShape")),
-                                          title: Text("No shape recognized")),
+                                          if (convert!) {
+                                            Offset center = calculateCenter(lastPoints);
+                                            double averageRadius = calculateAverageRadius(lastPoints, center);
+                                            List<Offset> normalizedCircle = generateNormalizedCircle(center, averageRadius, 200);
+                                            allStrokes.value.last.points = normalizedCircle;
+                                          }
+                                        }
+                                        else if (recognizedShape == "triangle"){
+                                          final convert = await showDialog<bool>(
+                                              context: context,
+                                              barrierDismissible: false,
+                                              builder: (BuildContext context) {
+                                                return AlertDialog(
+                                                  content: Text("Change to standard triangle?"),
+                                                  actions: <Widget>[
+                                                    TextButton(
+                                                        onPressed: () {
+                                                          Navigator.of(context).pop(false);
+                                                        },
+                                                        child: const Text('No')),
+                                                    TextButton(
+                                                      onPressed: () {
+                                                        Navigator.of(context).pop(true);
+                                                      },
+                                                      child: const Text("Yes"),
+                                                    )
+                                                  ],
+                                                );
+                                              });
+                                          if (convert!) {
+                                            Offset center = calculateCenter(lastPoints);
+                                            List<Offset> normalizedTriangle = generateNormalizedTriangle(center, 100);
+                                            allStrokes.value.last.points = normalizedTriangle;
+                                          }
+                                        } else if (recognizedShape == "square"){
+                                          final convert = await showDialog<bool>(
+                                              context: context,
+                                              barrierDismissible: false,
+                                              builder: (BuildContext context) {
+                                                return AlertDialog(
+                                                  content: Text("Change to standard square?"),
+                                                  actions: <Widget>[
+                                                    TextButton(
+                                                        onPressed: () {
+                                                          Navigator.of(context).pop(false);
+                                                        },
+                                                        child: const Text('No')),
+                                                    TextButton(
+                                                      onPressed: () {
+                                                        Navigator.of(context).pop(true);
+                                                      },
+                                                      child: const Text("Yes"),
+                                                    )
+                                                  ],
+                                                );
+                                              });
+                                          if (convert!) {
+                                            Offset center = calculateCenter(lastPoints);
+                                            List<Offset> normalizedSquare = generateNormalizedSquarePoints(center, 100); // You can choose your size
+                                            allStrokes.value.last.points = normalizedSquare;
+                                          }
+                                        }
+                                        else {
+                                          showDialog(
+                                            context: context,
+                                            builder: (context) => AlertDialog(
+                                              // title: Text("$recognizedShape")),
+                                                title: Text("No shape recognized")),
 
-                                    );
-                                  }
-                                }
-                                setState(() {
-                                });
-                              },
-                                  onPanStart: (details) {
+                                          );
+                                        }
+                                      }
+                                      setState(() {
+                                      });
+                                    },
+                                    onPanStart: (details) {
                                       _points.clear();
                                       _points.add(Point(details.localPosition.dx,
                                           details.localPosition.dy, 0));
                                       _currentPointerPosition =
                                           details.localPosition;
-                                  setState(() {
+                                      setState(() {
 
+                                      });
+                                    }, onPanUpdate: (details) {
+                                  _points.add(Point(details.localPosition.dx,
+                                      details.localPosition.dy, 0));
+                                  _currentPointerPosition =
+                                      details.localPosition;
+                                  setState(() {
                                   });
-                              }, onPanUpdate: (details) {
-                                        _points.add(Point(details.localPosition.dx,
-                                            details.localPosition.dy, 0));
-                                        _currentPointerPosition =
-                                            details.localPosition;
-                                    setState(() {
-                                    });
-                              }, onPanEnd: (details) async {
+                                }, onPanEnd: (details) async {
                                   if (drawingTool.value != DrawingTool.eraser &&
                                       _points.isNotEmpty) {
                                     String gestureName =
-                                        pDollarRecognizer(_points);
+                                    pDollarRecognizer(_points);
                                     if (gestureName == "checkmark") {
                                       print("gesture name:" + gestureName);
                                       await _saveDrawing();
                                     }
                                     _currentPointerPosition = null;
 
-                                  setState(() {});
-                                }
-                              }),
+                                    setState(() {});
+                                  }
+                                }),
                               )],
                           )))))
-    ],
+        ],
       ),
     );
   }

@@ -70,7 +70,12 @@ class MyHomePage extends StatefulWidget {
 class _MyHomePageState extends State<MyHomePage> {
   List<Point> _points = []; // Store the drawn points
   List<Map<String, dynamic>> savedDrawings = []; // Store the saved drawings
-  bool firstStroke = true;
+  // bool firstStroke = true;  // old
+  // new
+  bool firstStroke = false;
+  List<Point> _firstStroke = [];
+  List<Point> _secondStroke = [];
+
   int strokeNum = 1;
 
   // Setup to read JS code
@@ -444,47 +449,135 @@ class _MyHomePageState extends State<MyHomePage> {
               });
             },
             // Try to recognize plus for new drawing
+            //old Pan end
+            // onPanEnd: (details) async {
+            //   // for (var point in _points) {
+            //   //   debugPrint('${point.X.round().toString()},${point.Y.round().toString()}');
+            //   // }
+            //   // _points.clear();
+            //   if (_points.isNotEmpty) {
+            //     // recognize for 2 stroke plus signs
+            //     if (!firstStroke) {
+            //       String gestureName = pDollarRecognizer(_points);
+            //       if (gestureName == "plus") {
+            //         // print("in 2 stroke");
+            //         // print("gesture name: " + gestureName);
+            //         _points.clear();
+            //         _openNewDrawingScreen();
+            //       } else {
+            //         await keepLastStroke();
+            //       }
+            //     }
+            //
+            //     // recognize for 1 stroke plus signs
+            //     if (_points.isNotEmpty) {
+            //       String gestureName = pDollarRecognizer(_points);
+            //       if (gestureName == "plus") {
+            //         // print("in one stroke");
+            //         // print("gesture name: " + gestureName);
+            //         _points.clear();
+            //         _openNewDrawingScreen();
+            //       }
+            //       else if (gestureName == "star") { // Try to recognize star for favoriting
+            //         // print("in one stroke");
+            //         // print("gesture name: " + gestureName);
+            //
+            //         double beginX = _points.first.X;
+            //         double beginY = _points.first.Y;
+            //
+            //         List<Map<String, dynamic>> drawingPositions =
+            //             getDrawingPositions();
+            //
+            //         // Add drawing to favorite if gesture ends on that drawing
+            //         if (!favoriteDrawingThruGesture(
+            //             beginX, beginY, drawingPositions)) {
+            //           await showDialog(
+            //             context: context,
+            //             builder: (BuildContext context) {
+            //               return AlertDialog(
+            //                 title: Text("Error"),
+            //                 actions: <Widget>[
+            //                   TextButton(
+            //                     child: Text("No drawing favorited"),
+            //                     onPressed: () {
+            //                       Navigator.of(context).pop();
+            //                     },
+            //                   )
+            //                 ],
+            //               );
+            //             },
+            //           );
+            //         }
+            //         _points.clear();
+            //         print(_points.length);
+            //       }
+            //     }
+            //     firstStroke = false;
+            //   }
+            //   strokeNum += 1;
+            // },
+
+            //new Pan end
             onPanEnd: (details) async {
               // for (var point in _points) {
               //   debugPrint('${point.X.round().toString()},${point.Y.round().toString()}');
               // }
               // _points.clear();
               if (_points.isNotEmpty) {
-                // recognize for 2 stroke plus signs
                 if (!firstStroke) {
                   String gestureName = pDollarRecognizer(_points);
-                  if (gestureName == "plus") {
-                    // print("in 2 stroke");
-                    // print("gesture name: " + gestureName);
-                    _points.clear();
-                    _openNewDrawingScreen();
+                  print("Detected gesture for first stroke: $gestureName");
+
+                  if (gestureName == "verticalLine") {
+                    _firstStroke = List.from(_points); // Save first stroke
+                    _points.clear(); // Clear points for next stroke
+                    firstStroke = true; // Mark that the first stroke is complete
                   } else {
+                    // If it's not a vertical line, handle as a single-stroke gesture or other gesture
                     await keepLastStroke();
                   }
                 }
 
-                // recognize for 1 stroke plus signs
-                if (_points.isNotEmpty) {
+                // Part 2: Process the second stroke for 2-stroke plus (expecting horizontal line)
+                else if (firstStroke) {
                   String gestureName = pDollarRecognizer(_points);
-                  if (gestureName == "plus") {
-                    // print("in one stroke");
-                    // print("gesture name: " + gestureName);
-                    _points.clear();
-                    _openNewDrawingScreen();
-                  }
-                  else if (gestureName == "star") { // Try to recognize star for favoriting
-                    // print("in one stroke");
-                    // print("gesture name: " + gestureName);
+                  print("Detected gesture for second stroke: $gestureName");
 
+                  if (gestureName == "horizontalLine") {
+                    _secondStroke = List.from(_points); // Save second stroke
+                    _points.clear();
+                    firstStroke = false; // Reset for next gesture
+
+                    // Combine both strokes and check for "plus"
+                    String combinedGestureName = pDollarRecognizer([..._firstStroke, ..._secondStroke]);
+                    print("Combined gesture detected as: $combinedGestureName");
+                    if (combinedGestureName == "plus") {
+                      _openNewDrawingScreen();
+                    }
+                  } else {
+                    // If not recognized as horizontal, reset and keep last stroke
+                    await keepLastStroke();
+                    firstStroke = false;
+                  }
+                }
+
+                // Part 3: Recognize one-stroke plus sign only if first stroke hasn't started
+                if (!firstStroke && _points.isNotEmpty) {
+                  String gestureName = pDollarRecognizer(_points);
+                  print("Detected single-stroke gesture: $gestureName");
+
+                  if (gestureName == "plus") {
+                    _points.clear();
+                    print("One-stroke plus recognized");
+                    _openNewDrawingScreen();
+                  } else if (gestureName == "star") { // Star gesture for favoriting
                     double beginX = _points.first.X;
                     double beginY = _points.first.Y;
 
-                    List<Map<String, dynamic>> drawingPositions =
-                        getDrawingPositions();
+                    List<Map<String, dynamic>> drawingPositions = getDrawingPositions();
 
                     // Add drawing to favorite if gesture ends on that drawing
-                    if (!favoriteDrawingThruGesture(
-                        beginX, beginY, drawingPositions)) {
+                    if (!favoriteDrawingThruGesture(beginX, beginY, drawingPositions)) {
                       await showDialog(
                         context: context,
                         builder: (BuildContext context) {
@@ -503,13 +596,13 @@ class _MyHomePageState extends State<MyHomePage> {
                       );
                     }
                     _points.clear();
-                    print(_points.length);
+                    print("Points cleared after star gesture: ${_points.length}");
                   }
                 }
-                firstStroke = false;
               }
               strokeNum += 1;
             },
+
             // Widget tree
             child: Column(children: [
               Expanded(
