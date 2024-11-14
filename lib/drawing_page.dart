@@ -412,29 +412,158 @@ class _DrawingPageState extends State<DrawingPage>
   double offsetY = 0.0;
   bool scroll = false;
 
+  void recognize(int gesture) async {
+    final strokeCount = allStrokes.value.length;
+    bool rec = false;
+
+    if (gesture == 1) {
+      allStrokes.value.removeRange(strokeCount - 2, strokeCount);
+      if (strokeCount - 2 > 0) {
+        rec = true;
+      }
+    } else if (strokeCount > 0) {
+      rec = true;
+    }
+
+    if (rec) {
+      final lastStroke =
+          allStrokes.value.last.points;
+      List<Point> lastPoints = lastStroke
+          .map((offset) =>
+          Point(offset.dx, offset.dy, 0))
+          .toList();
+      String recognizedShape =
+      shapeRecognizer(lastPoints);
+
+      if (recognizedShape == "circle") {
+        final convert = await showDialog<bool>(
+            context: context,
+            barrierDismissible: false,
+            builder: (BuildContext context) {
+              return AlertDialog(
+                content: Text("Change to standard circle?"),
+                actions: <Widget>[
+                  TextButton(
+                      onPressed: () {
+                        Navigator.of(context).pop(false);
+                      },
+                      child: const Text('No')),
+                  TextButton(
+                    onPressed: () {
+                      Navigator.of(context).pop(true);
+                    },
+                    child: const Text("Yes"),
+                  )
+                ],
+              );
+            });
+
+        if (convert!) {
+          Offset center = calculateCenter(lastPoints);
+          double averageRadius = calculateAverageRadius(lastPoints, center);
+          List<Offset> normalizedCircle = generateNormalizedCircle(center, averageRadius, 200);
+          allStrokes.value.last.points = normalizedCircle;
+        }
+      }
+      else if (recognizedShape == "triangle"){
+        final convert = await showDialog<bool>(
+            context: context,
+            barrierDismissible: false,
+            builder: (BuildContext context) {
+              return AlertDialog(
+                content: Text("Change to standard triangle?"),
+                actions: <Widget>[
+                  TextButton(
+                      onPressed: () {
+                        Navigator.of(context).pop(false);
+                      },
+                      child: const Text('No')),
+                  TextButton(
+                    onPressed: () {
+                      Navigator.of(context).pop(true);
+                    },
+                    child: const Text("Yes"),
+                  )
+                ],
+              );
+            });
+        if (convert!) {
+          Offset center = calculateCenter(lastPoints);
+          List<Offset> normalizedTriangle = generateNormalizedTriangle(center, 100);
+          allStrokes.value.last.points = normalizedTriangle;
+        }
+      } else if (recognizedShape == "square"){
+        final convert = await showDialog<bool>(
+            context: context,
+            barrierDismissible: false,
+            builder: (BuildContext context) {
+              return AlertDialog(
+                content: Text("Change to standard square?"),
+                actions: <Widget>[
+                  TextButton(
+                      onPressed: () {
+                        Navigator.of(context).pop(false);
+                      },
+                      child: const Text('No')),
+                  TextButton(
+                    onPressed: () {
+                      Navigator.of(context).pop(true);
+                    },
+                    child: const Text("Yes"),
+                  )
+                ],
+              );
+            });
+        if (convert!) {
+          Offset center = calculateCenter(lastPoints);
+          List<Offset> normalizedSquare = generateNormalizedSquarePoints(center, 100); // You can choose your size
+          allStrokes.value.last.points = normalizedSquare;
+        }
+      }
+      else {
+        showDialog(
+          context: context,
+          builder: (context) => AlertDialog(
+              title: Text("No shape recognized")),
+        );
+      }
+    }
+
+    setState(() {
+    });
+  }
+
+  bool isDrawing = false;
+
   // Canvas and tool bar
   @override
   Widget build(BuildContext context) {
     final orientation = MediaQuery.of(context).orientation;
-    double containerHeight = orientation == Orientation.landscape ? 80 : 90;
+    double containerHeight = orientation == Orientation.landscape ? 80 : 120;
 
     return Scaffold(
       body: Column(
         children: [
           Container(
+            alignment: Alignment.bottomCenter,
             color: Theme.of(context).colorScheme.inversePrimary,
             height: containerHeight,
-            child: Row(
+            child: Flex(
+              direction: Axis.horizontal,
               mainAxisAlignment: MainAxisAlignment.center,
-              crossAxisAlignment: CrossAxisAlignment.end,
               children: [
-                SizedBox(width: 10),
-                ElevatedButton(onPressed: () {setState(() {
+                ElevatedButton(
+                    onPressed: () {setState(() {
                   scroll = !scroll;
                 });}, child: Text(scroll ? "Paint" : "Scroll")),
-                SizedBox(width: 15),
+                SizedBox(width: 4),
+                ElevatedButton(
+                    onPressed: () {setState(() {
+                  allStrokes.value.removeLast();
+                });}, child: Text("Undo")),
+                SizedBox(width: 4),
                 ColorPalette(selectedColorListenable: selectedColor),
-                SizedBox(width: 15),
+                SizedBox(width: 4),
                 ValueListenableBuilder<DrawingTool>(
                     valueListenable: drawingTool,
                     builder: (context, tool, child) {
@@ -450,6 +579,7 @@ class _DrawingPageState extends State<DrawingPage>
                               },
                               tooltip: 'Pencil'));
                     }),
+                SizedBox(width: 4),
                 ValueListenableBuilder<DrawingTool>(
                     valueListenable: drawingTool,
                     builder: (context, tool, child) {
@@ -465,7 +595,21 @@ class _DrawingPageState extends State<DrawingPage>
                               },
                               tooltip: 'Eraser'));
                     }),
-                SizedBox(width: 15),
+                SizedBox(width: 4),
+                IconButton(
+                  icon: Icon(Icons.info),
+                  onPressed: (){
+                    showDialog(
+                        context: context,
+                        builder: (BuildContext context) {
+                          return AlertDialog(
+                              title: Text ('Help'),
+                              content: Text('Info here')
+                          );
+                        }
+                    );
+                  },
+                ),
               ],
             ),
           ),
@@ -583,137 +727,25 @@ class _DrawingPageState extends State<DrawingPage>
                                 absorbing: scroll,
                                 child:
                                 GestureDetector(
-                                    onLongPress: () {allStrokes.value.removeLast();},
-                                    onLongPressUp: () {allStrokes.value.removeLast();},
-                                    onDoubleTap: () async {
-                                      final strokeCount = allStrokes.value.length;
-                                      allStrokes.value
-                                          .removeRange(strokeCount - 2, strokeCount);
-                                      if (strokeCount - 2 > 0) {
-                                        final lastStroke =
-                                            allStrokes.value.last.points;
-                                        List<Point> lastPoints = lastStroke
-                                            .map((offset) =>
-                                            Point(offset.dx, offset.dy, 0))
-                                            .toList();
-                                        String recognizedShape =
-                                        shapeRecognizer(lastPoints);
-
-                                        if (recognizedShape == "circle") {
-                                          final convert = await showDialog<bool>(
-                                              context: context,
-                                              barrierDismissible: false,
-                                              builder: (BuildContext context) {
-                                                return AlertDialog(
-                                                  content: Text("Change to standard circle?"),
-                                                  actions: <Widget>[
-                                                    TextButton(
-                                                        onPressed: () {
-                                                          Navigator.of(context).pop(false);
-                                                        },
-                                                        child: const Text('No')),
-                                                    TextButton(
-                                                      onPressed: () {
-                                                        Navigator.of(context).pop(true);
-                                                      },
-                                                      child: const Text("Yes"),
-                                                    )
-                                                  ],
-                                                );
-                                              });
-
-                                          if (convert!) {
-                                            Offset center = calculateCenter(lastPoints);
-                                            double averageRadius = calculateAverageRadius(lastPoints, center);
-                                            List<Offset> normalizedCircle = generateNormalizedCircle(center, averageRadius, 200);
-                                            allStrokes.value.last.points = normalizedCircle;
-                                          }
-                                        }
-                                        else if (recognizedShape == "triangle"){
-                                          final convert = await showDialog<bool>(
-                                              context: context,
-                                              barrierDismissible: false,
-                                              builder: (BuildContext context) {
-                                                return AlertDialog(
-                                                  content: Text("Change to standard triangle?"),
-                                                  actions: <Widget>[
-                                                    TextButton(
-                                                        onPressed: () {
-                                                          Navigator.of(context).pop(false);
-                                                        },
-                                                        child: const Text('No')),
-                                                    TextButton(
-                                                      onPressed: () {
-                                                        Navigator.of(context).pop(true);
-                                                      },
-                                                      child: const Text("Yes"),
-                                                    )
-                                                  ],
-                                                );
-                                              });
-                                          if (convert!) {
-                                            Offset center = calculateCenter(lastPoints);
-                                            List<Offset> normalizedTriangle = generateNormalizedTriangle(center, 100);
-                                            allStrokes.value.last.points = normalizedTriangle;
-                                          }
-                                        } else if (recognizedShape == "square"){
-                                          final convert = await showDialog<bool>(
-                                              context: context,
-                                              barrierDismissible: false,
-                                              builder: (BuildContext context) {
-                                                return AlertDialog(
-                                                  content: Text("Change to standard square?"),
-                                                  actions: <Widget>[
-                                                    TextButton(
-                                                        onPressed: () {
-                                                          Navigator.of(context).pop(false);
-                                                        },
-                                                        child: const Text('No')),
-                                                    TextButton(
-                                                      onPressed: () {
-                                                        Navigator.of(context).pop(true);
-                                                      },
-                                                      child: const Text("Yes"),
-                                                    )
-                                                  ],
-                                                );
-                                              });
-                                          if (convert!) {
-                                            Offset center = calculateCenter(lastPoints);
-                                            List<Offset> normalizedSquare = generateNormalizedSquarePoints(center, 100); // You can choose your size
-                                            allStrokes.value.last.points = normalizedSquare;
-                                          }
-                                        }
-                                        else {
-                                          showDialog(
-                                            context: context,
-                                            builder: (context) => AlertDialog(
-                                              // title: Text("$recognizedShape")),
-                                                title: Text("No shape recognized")),
-
-                                          );
-                                        }
-                                      }
-                                      setState(() {
-                                      });
-                                    },
                                     onPanStart: (details) {
-                                      _points.clear();
-                                      _points.add(Point(details.localPosition.dx,
-                                          details.localPosition.dy, 0));
-                                      _currentPointerPosition =
-                                          details.localPosition;
                                       setState(() {
-
+                                        isDrawing = true;
+                                        _points.clear();
                                       });
-                                    }, onPanUpdate: (details) {
-                                  _points.add(Point(details.localPosition.dx,
-                                      details.localPosition.dy, 0));
-                                  _currentPointerPosition =
-                                      details.localPosition;
-                                  setState(() {
-                                  });
-                                }, onPanEnd: (details) async {
+                                      _points.add(Point(details.localPosition.dx, details.localPosition.dy, 0));
+                                      _currentPointerPosition = details.localPosition;
+                                    },
+                                    onPanUpdate: (details) {
+                                      if (isDrawing) {
+                                        _points.add(Point(details.localPosition.dx,
+                                            details.localPosition.dy, 0));
+                                        _currentPointerPosition =
+                                            details.localPosition;
+                                        setState(() {});
+                                      }
+                                },
+                                    onPanEnd: (details) async {
+                                      setState(() {isDrawing = false;});
                                   if (drawingTool.value != DrawingTool.eraser &&
                                       _points.isNotEmpty) {
                                     String gestureName =
@@ -723,10 +755,18 @@ class _DrawingPageState extends State<DrawingPage>
                                       await _saveDrawing();
                                     }
                                     _currentPointerPosition = null;
-
-                                    setState(() {});
                                   }
-                                }),
+                                },
+                                  onDoubleTap: () {recognize(1);},
+                                  onLongPress: () {
+                                    if (isDrawing) {
+                                      setState(() {
+                                        isDrawing = false; // Stop drawing immediately
+                                      });
+                                    }
+                                    _points.clear(); // Clear points without adding any accidental strokes
+                                    _currentPointerPosition = null;
+                                    recognize(2);},),
                               )],
                           )))))
         ],

@@ -430,6 +430,22 @@ class _MyHomePageState extends State<MyHomePage> {
       appBar: AppBar(
         backgroundColor: Theme.of(context).colorScheme.inversePrimary,
         title: Text(widget.title),
+        actions: [
+          IconButton(
+            icon: Icon(Icons.info),
+            onPressed: (){
+              showDialog(
+                  context: context,
+                  builder: (BuildContext context) {
+                    return AlertDialog(
+                      title: Text ('Help'),
+                      content: Text('Info here')
+                    );
+                  }
+              );
+            },
+          )
+        ],
       ),
       body: Stack(children: [
         GestureDetector(
