@@ -240,14 +240,46 @@ class _DrawingPageState extends State<DrawingPage>
 
     int pointsPerSide = 50;
 
+    // More precise square generation with single pass per edge
     for (int i = 0; i <= pointsPerSide; i++) {
-    double t = i / pointsPerSide;
-    points.add(Offset(center.dx - halfSize + t * size, center.dy - halfSize)); // Top edge
-    points.add(Offset(center.dx + halfSize, center.dy - halfSize + t * size)); // Right edge
-    points.add(Offset(center.dx + halfSize - t * size, center.dy + halfSize)); // Bottom edge
-    points.add(Offset(center.dx - halfSize, center.dy + halfSize - t * size)); // Left edge
-  }
+      double t = i / pointsPerSide;
 
+      // Top edge - left to right
+      points.add(Offset(
+          center.dx - halfSize + size * t,
+          center.dy - halfSize
+      ));
+    }
+
+    for (int i = 0; i <= pointsPerSide; i++) {
+      double t = i / pointsPerSide;
+
+      // Right edge - top to bottom
+      points.add(Offset(
+          center.dx + halfSize,
+          center.dy - halfSize + size * t
+      ));
+    }
+
+    for (int i = 0; i <= pointsPerSide; i++) {
+      double t = i / pointsPerSide;
+
+      // Bottom edge - right to left
+      points.add(Offset(
+          center.dx + halfSize - size * t,
+          center.dy + halfSize
+      ));
+    }
+
+    for (int i = 0; i <= pointsPerSide; i++) {
+      double t = i / pointsPerSide;
+
+      // Left edge - bottom to top
+      points.add(Offset(
+          center.dx - halfSize,
+          center.dy + halfSize - size * t
+      ));
+    }
     return points;
   }
 
