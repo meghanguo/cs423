@@ -168,6 +168,26 @@ class _DrawingPageState extends State<DrawingPage>
     return sumRad / points.length;
   }
 
+  // to calculate the size of the drawn shape
+  double calculateDrawnShapeSize(List<Point> points) {
+    if (points.isEmpty) return 100; // Default size
+
+    double minX = points[0].X;
+    double maxX = points[0].X;
+    double minY = points[0].Y;
+    double maxY = points[0].Y;
+
+    for (var point in points) {
+      minX = min(minX, point.X);
+      maxX = max(maxX, point.X);
+      minY = min(minY, point.Y);
+      maxY = max(maxY, point.Y);
+    }
+
+    // Use the larger of width or height to maintain aspect ratio
+    return max(maxX - minX, maxY - minY);
+  }
+
   // Generate a circle that is standardized
   List<Offset> generateNormalizedCircle(Offset center, double radius, int numPoints) {
     List<Offset> circlePoints = [];
@@ -195,37 +215,24 @@ class _DrawingPageState extends State<DrawingPage>
 
     int pointsPerSide = 50;
 
-    // Top edge
-    for (int i = 0; i <= pointsPerSide; i++) {
-      double t = i / pointsPerSide;
-      points.add(Offset(
-          vertices[0].dx + (vertices[1].dx - vertices[0].dx) * t,
-          vertices[0].dy + (vertices[1].dy - vertices[0].dy) * t
-      )); // Top edge
+    // Add points for each edge
+    for (int edge = 0; edge < 3; edge++) {
+      Offset start = vertices[edge];
+      Offset end = vertices[(edge + 1) % 3];
+      
+      for (int i = 0; i <= pointsPerSide; i++) {
+        double t = i / pointsPerSide;
+        points.add(Offset(
+          start.dx + (end.dx - start.dx) * t,
+          start.dy + (end.dy - start.dy) * t
+        ));
+      }
     }
-
-    // Bottom left edge
-    for (int i = 0; i <= pointsPerSide; i++) {
-      double t = i / pointsPerSide;
-      points.add(Offset(
-          vertices[1].dx + (vertices[2].dx - vertices[1].dx) * t,
-          vertices[1].dy + (vertices[2].dy - vertices[1].dy) * t
-      )); // Bottom left edge
-    }
-
-    // Bottom right edge
-    for (int i = 0; i <= pointsPerSide; i++) {
-      double t = i / pointsPerSide;
-      points.add(Offset(
-          vertices[2].dx + (vertices[0].dx - vertices[2].dx) * t,
-          vertices[2].dy + (vertices[0].dy - vertices[2].dy) * t
-      )); // Bottom right edge
-    }
-
+    
     return points;
   }
 
-  // Generate a square that is standardized
+  // Generate a square that is normalized
   List<Offset> generateNormalizedSquarePoints(Offset center, double size) {
     double halfSize = size / 2;
 
@@ -234,24 +241,12 @@ class _DrawingPageState extends State<DrawingPage>
     int pointsPerSide = 50;
 
     for (int i = 0; i <= pointsPerSide; i++) {
-      double t = i / pointsPerSide; // Normalized value from 0 to 1
-      points.add(Offset(center.dx - halfSize + t * size, center.dy - halfSize)); // Top edge
-    }
-
-    for (int i = 0; i <= pointsPerSide; i++) {
-      double t = i / pointsPerSide;
-      points.add(Offset(center.dx + halfSize, center.dy - halfSize + t * size)); // Right edge
-    }
-
-    for (int i = 0; i <= pointsPerSide; i++) {
-      double t = i / pointsPerSide;
-      points.add(Offset(center.dx + halfSize - t * size, center.dy + halfSize)); // Bottom edge
-    }
-
-    for (int i = 0; i <= pointsPerSide; i++) {
-      double t = i / pointsPerSide;
-      points.add(Offset(center.dx - halfSize, center.dy + halfSize - t * size)); // Left edge
-    }
+    double t = i / pointsPerSide;
+    points.add(Offset(center.dx - halfSize + t * size, center.dy - halfSize)); // Top edge
+    points.add(Offset(center.dx + halfSize, center.dy - halfSize + t * size)); // Right edge
+    points.add(Offset(center.dx + halfSize - t * size, center.dy + halfSize)); // Bottom edge
+    points.add(Offset(center.dx - halfSize, center.dy + halfSize - t * size)); // Left edge
+  }
 
     return points;
   }
@@ -489,7 +484,8 @@ class _DrawingPageState extends State<DrawingPage>
             });
         if (convert!) {
           Offset center = calculateCenter(lastPoints);
-          List<Offset> normalizedTriangle = generateNormalizedTriangle(center, 100);
+          double drawnSize = calculateDrawnShapeSize(lastPoints);
+          List<Offset> normalizedTriangle = generateNormalizedTriangle(center, drawnSize);
           allStrokes.value.last.points = normalizedTriangle;
         }
       } else if (recognizedShape == "square"){
@@ -516,7 +512,8 @@ class _DrawingPageState extends State<DrawingPage>
             });
         if (convert!) {
           Offset center = calculateCenter(lastPoints);
-          List<Offset> normalizedSquare = generateNormalizedSquarePoints(center, 100); // You can choose your size
+          double drawnSize = calculateDrawnShapeSize(lastPoints);
+          List<Offset> normalizedSquare = generateNormalizedSquarePoints(center, drawnSize);
           allStrokes.value.last.points = normalizedSquare;
         }
       }
