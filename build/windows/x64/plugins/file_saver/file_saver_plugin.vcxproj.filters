@@ -1,0 +1,16 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="17.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <ClCompile Include="D:\UIC PhD\Fall 24\CS 423\cs423\windows\flutter\ephemeral\.plugin_symlinks\file_saver\windows\file_saver_plugin.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <CustomBuild Include="D:\UIC PhD\Fall 24\CS 423\cs423\windows\flutter\ephemeral\.plugin_symlinks\file_saver\windows\CMakeLists.txt" />
+  </ItemGroup>
+  <ItemGroup>
+    <Filter Include="Source Files">
+      <UniqueIdentifier>{7DE9063A-A43A-39BB-AF3D-EA11D1DD4470}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+</Project>

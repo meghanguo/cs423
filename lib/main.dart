@@ -80,7 +80,7 @@ class _MyHomePageState extends State<MyHomePage> {
 
   // Setup to read JS code
   late JavascriptRuntime jsRuntime;
-  String jsCode = ' ';
+  String jsCode = '';
   bool isLoading = true;
 
   // Setup for displaying images on home page
@@ -101,10 +101,8 @@ class _MyHomePageState extends State<MyHomePage> {
     jsRuntime.evaluate(jsCode);
     jsRuntime.evaluate('var recognizer = new PDollarRecognizer();');
 
-    String fileContent =
-        await rootBundle.loadString('assets/landing_page_gestures.txt');
-    final result =
-        jsRuntime.evaluate('recognizer.ProcessGesturesFile(`$fileContent`);');
+    String fileContent = await rootBundle.loadString('assets/landing_page_gestures.txt');
+    final result = jsRuntime.evaluate('recognizer.ProcessGesturesFile(`$fileContent`);');
   }
 
   // Recognizer
@@ -540,45 +538,45 @@ class _MyHomePageState extends State<MyHomePage> {
               // }
               // _points.clear();
               if (_points.isNotEmpty) {
-                if (!firstStroke) {
-                  String gestureName = pDollarRecognizer(_points);
-                  print("Detected gesture for first stroke: $gestureName");
+                // if (!firstStroke) {
+                //   String gestureName = pDollarRecognizer(_points);
+                //   print("Detected gesture for first stroke: $gestureName");
 
-                  if (gestureName == "verticalLine") {
-                    _firstStroke = List.from(_points); // Save first stroke
-                    _points.clear(); // Clear points for next stroke
-                    firstStroke = true; // Mark that the first stroke is complete
-                  } else {
-                    // If it's not a vertical line, handle as a single-stroke gesture or other gesture
-                    await keepLastStroke();
-                  }
-                }
+                //   if (gestureName == "verticalLine") {
+                //     _firstStroke = List.from(_points); // Save first stroke
+                //     _points.clear(); // Clear points for next stroke
+                //     firstStroke = true; // Mark that the first stroke is complete
+                //   } else {
+                //     // If it's not a vertical line, handle as a single-stroke gesture or other gesture
+                //     await keepLastStroke();
+                //   }
+                // }
 
-                // Part 2: Process the second stroke for 2-stroke plus (expecting horizontal line)
-                else if (firstStroke) {
-                  String gestureName = pDollarRecognizer(_points);
-                  print("Detected gesture for second stroke: $gestureName");
+                // // Part 2: Process the second stroke for 2-stroke plus (expecting horizontal line)
+                // else if (firstStroke) {
+                //   String gestureName = pDollarRecognizer(_points);
+                //   print("Detected gesture for second stroke: $gestureName");
 
-                  if (gestureName == "horizontalLine") {
-                    _secondStroke = List.from(_points); // Save second stroke
-                    _points.clear();
-                    firstStroke = false; // Reset for next gesture
+                //   if (gestureName == "horizontalLine") {
+                //     _secondStroke = List.from(_points); // Save second stroke
+                //     _points.clear();
+                //     firstStroke = false; // Reset for next gesture
 
-                    // Combine both strokes and check for "plus"
-                    String combinedGestureName = pDollarRecognizer([..._firstStroke, ..._secondStroke]);
-                    print("Combined gesture detected as: $combinedGestureName");
-                    if (combinedGestureName == "plus") {
-                      _openNewDrawingScreen();
-                    }
-                  } else {
-                    // If not recognized as horizontal, reset and keep last stroke
-                    await keepLastStroke();
-                    firstStroke = false;
-                  }
-                }
+                //     // Combine both strokes and check for "plus"
+                //     String combinedGestureName = pDollarRecognizer([..._firstStroke, ..._secondStroke]);
+                //     print("Combined gesture detected as: $combinedGestureName");
+                //     if (combinedGestureName == "plus") {
+                //       _openNewDrawingScreen();
+                //     }
+                //   } else {
+                //     // If not recognized as horizontal, reset and keep last stroke
+                //     await keepLastStroke();
+                //     firstStroke = false;
+                //   }
+                // }
 
                 // Part 3: Recognize one-stroke plus sign only if first stroke hasn't started
-                if (!firstStroke && _points.isNotEmpty) {
+                //if (!firstStroke && _points.isNotEmpty) {
                   String gestureName = pDollarRecognizer(_points);
                   print("Detected single-stroke gesture: $gestureName");
 
@@ -614,7 +612,7 @@ class _MyHomePageState extends State<MyHomePage> {
                     _points.clear();
                     print("Points cleared after star gesture: ${_points.length}");
                   }
-                }
+                //}
               }
               strokeNum += 1;
             },
@@ -706,7 +704,8 @@ class _MyHomePageState extends State<MyHomePage> {
                                   });
                                 }
                               : null,
-                          child: Text('Previous')),
+                          child: Text('Previous')
+                      ),
                       Text('Page ${currentPageIndex + 1} of ${pages.length}'),
                       ElevatedButton(
                         onPressed: currentPageIndex < pages.length - 1

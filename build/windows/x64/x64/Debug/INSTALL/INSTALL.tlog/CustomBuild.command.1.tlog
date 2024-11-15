@@ -1,0 +1,10 @@
+^D:\UIC PHD\FALL 24\CS 423\CS423\BUILD\WINDOWS\X64\CMAKEFILES\049593459E4831C20BB0C6D7778AF4F4\INSTALL_FORCE.RULE
+setlocal
+cd .
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal & call :cmErrorLevel %errorlevel% & goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd

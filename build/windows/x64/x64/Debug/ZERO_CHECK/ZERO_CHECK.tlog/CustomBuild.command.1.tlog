@@ -1,0 +1,10 @@
+^D:\UIC PHD\FALL 24\CS 423\CS423\BUILD\WINDOWS\X64\CMAKEFILES\049593459E4831C20BB0C6D7778AF4F4\GENERATE.STAMP.RULE
+setlocal
+"C:\Program Files\Microsoft Visual Studio\2022\Community\Common7\IDE\CommonExtensions\Microsoft\CMake\CMake\bin\cmake.exe" "-SD:/UIC PhD/Fall 24/CS 423/cs423/windows" "-BD:/UIC PhD/Fall 24/CS 423/cs423/build/windows/x64" --check-stamp-list CMakeFiles/generate.stamp.list --vs-solution-file "D:/UIC PhD/Fall 24/CS 423/cs423/build/windows/x64/painting_app_423.sln"
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal & call :cmErrorLevel %errorlevel% & goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd
