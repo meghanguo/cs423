@@ -67,7 +67,7 @@ class MyHomePage extends StatefulWidget {
   State<MyHomePage> createState() => _MyHomePageState();
 }
 
-class _MyHomePageState extends State<MyHomePage> with SingleTickerProviderStateMixin {
+class _MyHomePageState extends State<MyHomePage> {
   List<Point> _points = []; // Store the drawn points
   List<Map<String, dynamic>> savedDrawings = []; // Store the saved drawings
   // bool firstStroke = true;  // old
@@ -75,8 +75,6 @@ class _MyHomePageState extends State<MyHomePage> with SingleTickerProviderStateM
   bool firstStroke = false;
   List<Point> _firstStroke = [];
   List<Point> _secondStroke = [];
-  late final AnimationController _plusAnimationController;
-  bool showPlusHint = true;
 
   int strokeNum = 1;
 
@@ -95,29 +93,6 @@ class _MyHomePageState extends State<MyHomePage> with SingleTickerProviderStateM
     loadJs();
     jsRuntime = getJavascriptRuntime();
     _loadDrawings();
-    _plusAnimationController = AnimationController(
-      duration: const Duration(seconds: 2),
-      vsync: this,
-    )..repeat(reverse: false);
-    _loadHintState();
-  }
-
-  @override
-  void dispose() {
-    _plusAnimationController.dispose();
-    super.dispose();
-  }
-
-  Future<void> _loadHintState() async {
-    final prefs = await SharedPreferences.getInstance();
-    setState(() {
-      showPlusHint = prefs.getBool('showPlusHint') ?? true;
-    });
-  }
-
-  Future<void> _saveHintState() async {
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.setBool('showPlusHint', showPlusHint);
   }
 
   // load JS code to be called from Flutter
@@ -193,11 +168,6 @@ class _MyHomePageState extends State<MyHomePage> with SingleTickerProviderStateM
     );
 
     if (confirmNewDrawing == true) {
-      setState(() {
-      showPlusHint = false;
-      });
-      _saveHintState();
-      
       await Navigator.push(
         context,
         MaterialPageRoute(
@@ -751,63 +721,10 @@ class _MyHomePageState extends State<MyHomePage> with SingleTickerProviderStateM
                     ],
                   ))
             ])),
-        if (savedDrawings.isEmpty && showPlusHint)
-          Positioned.fill(
-            child: CustomPaint(
-              painter: PlusSignAnimationPainter(
-                animation: _plusAnimationController,
-              ),
-            ),
-          ),
       ]),
     );
   }
 }
-
-
-class PlusSignAnimationPainter extends CustomPainter {
-  final Animation<double> animation;
-
-  PlusSignAnimationPainter({required this.animation}) : super(repaint: animation);
-
-  @override
-  void paint(Canvas canvas, Size size) {
-    final paint = Paint()
-      ..color = Colors.grey.withOpacity(0.3)
-      ..strokeWidth = 4
-      ..style = PaintingStyle.stroke
-      ..strokeCap = StrokeCap.round;
-
-    final center = Offset(size.width / 2, size.height / 2);
-    final progress = animation.value;
-
-    // Draw vertical line
-    if (progress <= 0.5) {
-      canvas.drawLine(
-        center.translate(0, -50 * progress * 2),
-        center.translate(0, 50 * progress * 2),
-        paint,
-      );
-    } else {
-      canvas.drawLine(
-        center.translate(0, -50),
-        center.translate(0, 50),
-        paint,
-      );
-      // Draw horizontal line
-      final horizontalProgress = (progress - 0.5) * 2;
-      canvas.drawLine(
-        center.translate(-50 * horizontalProgress, 0),
-        center.translate(50 * horizontalProgress, 0),
-        paint,
-      );
-    }
-  }
-
-  @override
-  bool shouldRepaint(covariant CustomPainter oldDelegate) => true;
-}
-
 
 class GesturePainter extends CustomPainter {
   final List<Point> points;
