@@ -693,7 +693,7 @@ class _MyHomePageState extends State<MyHomePage> {
                               : null,
                           child: Text('Previous')
                       ),
-                      Text('Page ${currentPageIndex == 0 ? 0: currentPageIndex + 1} of ${pages.length}'),
+                      Text('Page ${currentPageIndex + 1} of ${pages.length}'),
                       ElevatedButton(
                         onPressed: currentPageIndex < pages.length - 1
                             ? () {
