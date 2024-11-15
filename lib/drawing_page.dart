@@ -585,14 +585,14 @@ class _DrawingPageState extends State<DrawingPage>
                     onPressed: () {setState(() {
                   scroll = !scroll;
                 });}, child: Text(scroll ? "Paint" : "Scroll")),
-                SizedBox(width: 4),
+                SizedBox(width: 10),
                 ElevatedButton(
                     onPressed: () {setState(() {
                   allStrokes.value.removeLast();
                 });}, child: Text("Undo")),
-                SizedBox(width: 4),
+                SizedBox(width: 8),
                 ColorPalette(selectedColorListenable: selectedColor),
-                SizedBox(width: 4),
+                SizedBox(width: 15),
                 ValueListenableBuilder<DrawingTool>(
                     valueListenable: drawingTool,
                     builder: (context, tool, child) {
@@ -608,7 +608,7 @@ class _DrawingPageState extends State<DrawingPage>
                               },
                               tooltip: 'Pencil'));
                     }),
-                SizedBox(width: 4),
+                SizedBox(width: 10),
                 ValueListenableBuilder<DrawingTool>(
                     valueListenable: drawingTool,
                     builder: (context, tool, child) {
@@ -625,20 +625,6 @@ class _DrawingPageState extends State<DrawingPage>
                               tooltip: 'Eraser'));
                     }),
                 SizedBox(width: 4),
-                IconButton(
-                  icon: Icon(Icons.info),
-                  onPressed: (){
-                    showDialog(
-                        context: context,
-                        builder: (BuildContext context) {
-                          return AlertDialog(
-                              title: Text ('Help'),
-                              content: Text('Info here')
-                          );
-                        }
-                    );
-                  },
-                ),
               ],
             ),
           ),
