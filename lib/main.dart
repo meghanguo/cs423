@@ -263,6 +263,9 @@ class _MyHomePageState extends State<MyHomePage> {
               TextButton(
                   onPressed: () {
                     Navigator.of(context).pop(true);
+                    setState(() {
+                      _loadDrawings();
+                    });
                   },
                   child: Text("Delete"))
             ],
