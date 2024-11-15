@@ -683,6 +683,7 @@ class _MyHomePageState extends State<MyHomePage> {
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
+                      //if (pages.length > 1 && currentPageIndex > 0)
                       ElevatedButton(
                           onPressed: currentPageIndex > 0
                               ? () {
@@ -693,7 +694,9 @@ class _MyHomePageState extends State<MyHomePage> {
                               : null,
                           child: Text('Previous')
                       ),
-                      Text('Page ${currentPageIndex + 1} of ${pages.length}'),
+                      //if (pages.length > 1)
+                      Text('Page ${pages.length == 0 ? currentPageIndex : currentPageIndex + 1} of ${pages.length}'),
+                      //if (pages.length > 1 && currentPageIndex < pages.length - 1)
                       ElevatedButton(
                         onPressed: currentPageIndex < pages.length - 1
                             ? () {
