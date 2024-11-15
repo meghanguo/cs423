@@ -115,12 +115,12 @@ class _DrawingPageState extends State<DrawingPage>
   Future<void> loadJs() async {
     jsCode = await rootBundle.loadString('assets/pdollar.js');
     jsRuntime.evaluate(jsCode);
-    jsRuntime.evaluate('var recognizer = new PDollarRecognizer();');
+    jsRuntime.evaluate('var recognizer = new PDollarRecognizer(1);'); // 0 | 1 | 2. 0 = landing page gestures, 1 = drawing page gestures, 2 = drawing shapes gestures
     String fileContent =
     await rootBundle.loadString('assets/drawing_page_gestures.txt');
     final result = jsRuntime.evaluate('recognizer.ProcessGesturesFile(`$fileContent`);');
 
-    jsRuntime.evaluate('var shapeRecognizer = new PDollarRecognizer();');
+    jsRuntime.evaluate('var shapeRecognizer = new PDollarRecognizer(2);'); // 0 | 1 | 2. 0 = landing page gestures, 1 = drawing page gestures, 2 = drawing shapes gestures
     String shapeFileContent =
     await rootBundle.loadString('assets/drawing_shapes.txt');
     final shapeResult = jsRuntime.evaluate('shapeRecognizer.ProcessGesturesFile(`$shapeFileContent`);');

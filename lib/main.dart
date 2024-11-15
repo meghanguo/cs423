@@ -99,7 +99,7 @@ class _MyHomePageState extends State<MyHomePage> {
   Future<void> loadJs() async {
     jsCode = await rootBundle.loadString('assets/pdollar.js');
     jsRuntime.evaluate(jsCode);
-    jsRuntime.evaluate('var recognizer = new PDollarRecognizer();');
+    jsRuntime.evaluate('var recognizer = new PDollarRecognizer(0);'); // 0 | 1 | 2. 0 = landing page gestures, 1 = drawing page gestures, 2 = drawing shapes gestures
 
     String fileContent = await rootBundle.loadString('assets/landing_page_gestures.txt');
     final result = jsRuntime.evaluate('recognizer.ProcessGesturesFile(`$fileContent`);');
