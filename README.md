@@ -2,11 +2,11 @@
 
 ## Overview
 
-This application is a painting application developed for a class. This gesture-based application lets you draw, save, edit, and favorite your drawings. It also recognizes shapes and perfects them when the user wants.
+This application is a painting application developed for a natural user interactions class. This gesture-based application lets you draw, save, edit, and favorite your drawings. It also recognizes shapes and allows users to update drawn shapes to standardized versions of them.
 
 ## Environment
 
-Flutter was used to develop this app. It allows us to test it on iOS and Android without changing the language or how the code is structured.
+Flutter was used to develop this app. It allowed us to test our app on iOS and Android without changing the language or how the code is structured.
 
 ## Getting started
 
@@ -123,14 +123,14 @@ git clone git@github.com:meghanguo/cs423.git
 
 First open the project in Android Studio and make sure the device list is visible if not. It might ask you to enable Dart first.
 
-Just in case in the terminal of Android Studio, type
+In the Android Studio terminal, make sure you're in the project directory and type
 
 ```shell
 flutter clean
 flutter pub get
 ```
 
-In your Mac terminal go to the project directory and go to ios folder instead the directory. You should see **Runner.xcworkspace** file.
+In your Mac terminal go to the project directory and go to the ios folder inside the directory. You should see **Runner.xcworkspace** file.
 
 Type
 
@@ -138,6 +138,6 @@ Type
 open Runner.xcworkspace
 ```
 
-This should open Xcode window. Before running the project connect your iOS device to your Mac and make sure developer mode is on.
+This should open Xcode window. Now connect your iOS device to your Mac and make sure developer mode on your iOS device is on. Instructions on how to turn on developer mode [here](https://developer.apple.com/documentation/xcode/enabling-developer-mode-on-a-device). 
 
-To finally run the app, click on **Run** button on the top left. This should download our app in your phone. Give it few minutes to complete the download and then you are ready to use our app.
+To finally run the app, select the device to run our app in the top middle of the Xcode (Runner > *device name*) click on **Run** button on the top left. This should download our app in your phone. Give it few minutes to complete the download and then the app will load up on your device and is ready to use.
